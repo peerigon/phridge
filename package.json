@@ -1,0 +1,31 @@
+{
+  "name": "phantom-farm",
+  "version": "0.1.0",
+  "description": "Run your own little farm of cute phantomjs processes",
+  "main": "./lib/main.js",
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha test/main.test.js -R spec"
+  },
+  "keywords": [
+    "phantom",
+    "phantomjs",
+    "process",
+    "subprocess",
+    "long-term",
+    "forever"
+  ],
+  "dependencies": {
+    "when": "3.x",
+    "phantomjs": "1.x"
+  },
+  "devDependencies": {
+    "mocha": "1.x",
+    "chai": "1.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/peerigon/phantom-farm.git"
+  },
+  "author": "peerigon <developers@peerigon.com>",
+  "license": "Unlicense"
+}
