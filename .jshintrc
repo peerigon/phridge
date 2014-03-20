@@ -1,8 +1,9 @@
 {
-    "browser": true,
+    "browser": false,
     "node": true,
     "expr": true,
     "predef": [         // Extra globals.
+        "Promise",
         "describe",
         "it",
         "before",
