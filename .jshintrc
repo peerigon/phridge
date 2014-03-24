@@ -9,7 +9,9 @@
         "before",
         "after",
         "beforeEach",
-        "afterEach"
+        "afterEach",
+        "server",
+        "phantom"
     ],
 
     "curly": true,     // Require {} for every new block or scope.
