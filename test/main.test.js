@@ -6,6 +6,7 @@ var chai = require("chai"),
     getport = require("getport"),
     chaiAsPromised = require("chai-as-promised"),
     http = require("http"),
+    stream = require("stream"),
     expect = chai.expect,
     phantomFarm = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
@@ -57,7 +58,7 @@ describe("phantom-farm", function () {
 
     });
 
-    describe(".exitAll()", function () {
+    describe.skip(".exitAll()", function () {
 
         it("should return an es6 promise", function () {
             expect(when.isPromiseLike(phantomFarm.exitAll())).to.equal(true);
@@ -85,18 +86,17 @@ describe("phantom-farm", function () {
 
 });
 
-describe.skip("Phantom", function () {
+describe("Phantom", function () {
     var phantom;
 
-    beforeEach(slow(function (done) {
-        phantomFarm.create().then(function (newPhantom) {
+    beforeEach(slow(function () {
+        return phantomFarm.create().then(function (newPhantom) {
             phantom = newPhantom;
-            done();
-        }, done);
+        });
     }));
 
-    after(slow(function (done) {
-        phantomFarm.exitAll().then(done, done);
+    afterEach(slow(function () {
+        return phantom.exit();
     }));
 
     describe(".prototype", function () {
@@ -104,12 +104,60 @@ describe.skip("Phantom", function () {
         describe(".constructor(childProcess, port)", function () {
 
             it("should set the childProcess and port accordingly", function () {
-                expect(phantom.childProcess.pid).to.be.a("number");
-                expect(phantom.port).to.be.a("number");
+                var childProcess = {},
+                    port = 3000;
+
+                // exit() the instance created by the beforeEach hook
+                // we're creating our own instance for this test
+                phantom.exit();
+
+                phantom = new Phantom(childProcess, port);
+                expect(phantom.childProcess).to.equal(childProcess);
+                expect(phantom.port).to.equal(port);
+
+                phantom.exit = function () {
+                    instances.splice(instances.indexOf(this), 1);
+                };
             });
 
             it("should add the instance to the instances array", function () {
                 expect(instances).to.contain(phantom);
+            });
+
+        });
+
+        describe(".childProcess", function () {
+
+            it("should provide a reference on the child process object created by node", function () {
+                expect(phantom.childProcess).to.be.an("object");
+                expect(phantom.childProcess.stdin).to.be.an("object");
+                expect(phantom.childProcess.stdout).to.be.an("object");
+                expect(phantom.childProcess.stderr).to.be.an("object");
+            });
+
+        });
+
+        describe(".port", function () {
+
+            it("should be a number", function () {
+                expect(phantom.port).to.be.a("number");
+            });
+
+        });
+
+        describe(".run(fn)", function () {
+
+            it.only("should execute the given function in the phantomjs environment", function (done) {
+                phantom.childProcess.stdout.on("data", function (chunk) {
+                    expect(chunk.toString().trim()).to.equal("typeof webpage.create = function");
+                    done();
+                });
+
+                phantom.run(function () {
+                    var webpage = require("webpage");
+
+                    console.log("typeof webpage.create = " + typeof webpage.create);
+                });
             });
 
         });
