@@ -5,12 +5,15 @@ var chai = require("chai"),
     node = require("when/node"),
     getport = require("getport"),
     chaiAsPromised = require("chai-as-promised"),
-    http = require("http"),
-    stream = require("stream"),
+    net = require("net"),
     expect = chai.expect,
     phantomFarm = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     instances = require("../lib/instances.js");
+
+// enable global promise shim
+// @see https://github.com/cujojs/when/blob/master/docs/es6-promise-shim.md
+require("when/es6-shim/Promise");
 
 chai.config.includeStack = true;
 chai.use(chaiAsPromised);
@@ -23,56 +26,58 @@ describe("phantom-farm", function () {
         return phantomFarm.exitAll();
     }));
 
-    describe.skip(".create(config?)", function () {
+    describe(".create(config?)", function () {
 
         it("should return a promise", function () {
-            expect(when.isPromiseLike(phantomFarm.create())).to.equal(true);
+            expect(phantomFarm.create()).to.be.an.instanceOf(Promise);
         });
 
-        it("should resolve to an instance of Phantom", slow(function (done) {
-            phantomFarm.create().then(function (phantom) {
+        it("should resolve to an instance of Phantom", slow(function () {
+            return phantomFarm.create().then(function (phantom) {
                 expect(phantom).to.be.an.instanceOf(Phantom);
-                done();
-            }).catch(done);
+            });
         }));
 
-        it("should pass the provided config to phantomjs", slow(function (done) {
+        it("should pass the provided config to phantomjs", slow(function () {
             var debuggerPort;
 
-            getport()
+            return getport()
                 .then(function (port) {
                     debuggerPort = port;
-                    console.log(debuggerPort);
                     return phantomFarm.create({ remoteDebuggerPort: port });
                 })
-                .then(nextTick(function () {
-                    try {
-                        http.createServer().listen(debuggerPort);
-                    } catch (err) {
-                        console.log(err);
-                        done();
-                    }
-                }))
-                .catch(done);
+                .then(function () {
+                    return new Promise(function (resolve, reject) {
+                        var client = net.connect(debuggerPort, function () {
+                            client.destroy();
+                            resolve();
+                        });
+
+                        client.on("error", reject);
+                    });
+                });
         }));
 
     });
 
-    describe.skip(".exitAll()", function () {
+    describe(".exitAll()", function () {
 
-        it("should return an es6 promise", function () {
-            expect(when.isPromiseLike(phantomFarm.exitAll())).to.equal(true);
+        it("should return a promise", function () {
+            expect(phantomFarm.exitAll()).to.be.an.instanceOf(Promise);
         });
 
-        it("should exit cleanly all running phantomjs instances", function () {
-            var currentInstances = [phantomFarm.create(), phantomFarm.create(), phantomFarm.create()],
-                exitted = [];
+        it("should exit cleanly all running phantomjs instances", slow(function () {
+            var exitted = [];
 
-            return when.all(currentInstances).then(function () {
-                    console.log("hi");
-                    currentInstances[0].childProcess.on("exit", function () { exitted.push(0); });
-                    currentInstances[1].childProcess.on("exit", function () { exitted.push(1); });
-                    currentInstances[2].childProcess.on("exit", function () { exitted.push(2); });
+            return when.all([
+                    phantomFarm.create(),
+                    phantomFarm.create(),
+                    phantomFarm.create()
+                ])
+                .then(function (p) {
+                    p[0].childProcess.on("exit", function () { exitted.push(0); });
+                    p[1].childProcess.on("exit", function () { exitted.push(1); });
+                    p[2].childProcess.on("exit", function () { exitted.push(2); });
 
                     return phantomFarm.exitAll();
                 })
@@ -80,7 +85,7 @@ describe("phantom-farm", function () {
                     exitted.sort();
                     expect(exitted).to.eql([0, 1, 2]);
                 });
-        });
+        }));
 
     });
 
@@ -147,7 +152,11 @@ describe("Phantom", function () {
 
         describe(".run(fn)", function () {
 
-            it.only("should execute the given function in the phantomjs environment", function (done) {
+            it("should return a promise", function () {
+                expect(phantom.run(function (resolve) { resolve(); })).to.be.an.instanceOf(Promise);
+            });
+
+            it("should execute the given function in the phantomjs environment", function (done) {
                 phantom.childProcess.stdout.on("data", function (chunk) {
                     expect(chunk.toString().trim()).to.equal("typeof webpage.create = function");
                     done();
@@ -157,6 +166,47 @@ describe("Phantom", function () {
                     var webpage = require("webpage");
 
                     console.log("typeof webpage.create = " + typeof webpage.create);
+                });
+            });
+
+            it("should provide a resolve function", function () {
+                return expect(phantom.run(function (resolve) {
+                    resolve("everything ok");
+                })).to.eventually.equal("everything ok");
+            });
+
+            it("should provide the possibility to resolve with any stringify-able data", function () {
+                return when.all([
+                    expect(phantom.run(function (resolve) {
+                        resolve(true);
+                    })).to.eventually.equal(true),
+                    expect(phantom.run(function (resolve) {
+                        resolve(2);
+                    })).to.eventually.equal(2),
+                    expect(phantom.run(function (resolve) {
+                        resolve(null);
+                    })).to.eventually.equal(null),
+                    expect(phantom.run(function (resolve) {
+                        resolve([1, 2, 3]);
+                    })).to.eventually.deep.equal([1, 2, 3]),
+                    expect(phantom.run(function (resolve) {
+                        resolve({
+                            someArr: [1, 2, 3],
+                            otherObj: {}
+                        });
+                    })).to.eventually.deep.equal({
+                        someArr: [1, 2, 3],
+                        otherObj: {}
+                    })
+                ]);
+            });
+
+            it("should provide a reject function", function () {
+                return phantom.run(function (resolve, reject) {
+                    reject(new Error("not ok"));
+                }).catch(function (err) {
+                    expect(err).to.be.an.instanceOf(Error);
+                    expect(err.message).to.equal("not ok");
                 });
             });
 
@@ -203,13 +253,7 @@ describe("Phantom", function () {
 function slow(fn) {
     return function () {
         this.slow(2000);
-        this.timeout(5000);
+        this.timeout(6000);
         return fn();
-    };
-}
-
-function nextTick(fn) {
-    return function () {
-        setImmediate(fn);
     };
 }
