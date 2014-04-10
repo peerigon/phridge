@@ -150,7 +150,7 @@ describe("Phantom", function () {
 
         });
 
-        describe(".run(fn)", function () {
+        describe(".run(fn, params?)", function () {
 
             it("should return a promise", function () {
                 expect(phantom.run(function (resolve) { resolve(); })).to.be.an.instanceOf(Promise);
@@ -177,6 +177,9 @@ describe("Phantom", function () {
 
             it("should provide the possibility to resolve with any stringify-able data", function () {
                 return when.all([
+                    expect(phantom.run(function (resolve) {
+                        resolve();
+                    })).to.eventually.equal(undefined),
                     expect(phantom.run(function (resolve) {
                         resolve(true);
                     })).to.eventually.equal(true),
@@ -208,6 +211,47 @@ describe("Phantom", function () {
                     expect(err).to.be.an.instanceOf(Error);
                     expect(err.message).to.equal("not ok");
                 });
+            });
+            
+            it("should provide all phantomjs default modules as convenience", function () {
+                return phantom.run(function (resolve, reject) {
+                    if (!webpage) {
+                        return reject(new Error("webpage not available"));
+                    }
+                    if (!system) {
+                        return reject(new Error("system not available"));
+                    }
+                    if (!fs) {
+                        return reject(new Error("fs not available"));
+                    }
+                    if (!webserver) {
+                        return reject(new Error("webserver not available"));
+                    }
+                    if (!child_process) {
+                        return reject(new Error("child_process not available"));
+                    }
+                    resolve();
+                });
+            });
+
+            it("should provide an empty config object to store all kind of configuration", function () {
+                expect(phantom.run(function (resolve) {
+                    resolve(config);
+                })).to.eventually.deep.equal({});
+            });
+
+            it("should provide the possibility to pass params", function () {
+                var params = {
+                    some: ["param"],
+                    withSome: "crazy",
+                    values: {
+                        number1: 1
+                    }
+                };
+
+                return expect(phantom.run(function (params, resolve) {
+                    resolve(params);
+                }, params)).to.eventually.deep.equal(params);
             });
 
         });
