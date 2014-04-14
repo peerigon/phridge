@@ -6,6 +6,7 @@ var chai = require("chai"),
     getport = require("getport"),
     chaiAsPromised = require("chai-as-promised"),
     net = require("net"),
+    Writable = require("stream").Writable,
     http = require("http"),
     expect = chai.expect,
     phantomFarm = require("../lib/main.js"),
@@ -42,23 +43,40 @@ describe("phantom-farm", function () {
             });
         }));
 
-        it.skip("should pass the provided config to phantomjs", slow(function () {
-            var debuggerPort;
+        it("should pass the provided config to phantomjs", slow(function () {
+            var stdout = new Writable(),
+                message = "";
+
+            stdout._write = function (chunk, encoding, callback) {
+                message += chunk.toString();
+                setImmediate(callback);
+            };
 
             return getport(10000)
                 .then(function (port) {
-                    debuggerPort = port;
-                    console.log("debuggerPort", port);
-                    return phantomFarm.create({ remoteDebuggerPort: port });
-                })
-                .then(function () {
-                    return new Promise(function (resolve, reject) {
-                        var client = net.connect(debuggerPort, function () {
-                            client.destroy();
-                            resolve();
-                        });
+                    var server = net.createServer();
 
-                        client.on("error", reject);
+                    // We're blocking the GhostDriver port so phantomjs crashes on startup.
+                    // Otherwise the phantomjs processes can't be killed because it doesn't
+                    // listen on our commands in GhostDriver-mode.
+                    // Using our stdout to determine if phantomjs entered the GhostDriver-mode.
+                    server.listen(port);
+
+                    phantomFarm.create({
+                        webdriver: "localhost:" + port,
+                        phantomFarm: {
+                            stdout: stdout
+                        }
+                    });
+
+                    return new Promise(function (resolve, reject) {
+                        setTimeout(function () {
+                            if (message.search("GhostDriver") === -1) {
+                                reject(new Error("GhostDriver config not recognized"));
+                            } else {
+                                resolve();
+                            }
+                        }, 2000);
                     });
                 });
         }));
@@ -134,19 +152,21 @@ describe("Phantom", function () {
 
         describe(".constructor(childProcess, port, secret)", function () {
 
-            it("should set the childProcess and port accordingly", function () {
+            it("should set the childProcess, port and secret accordingly", function () {
                 var childProcess = {
                         on: function () {}
                     },
-                    port = 3000;
+                    port = 3000,
+                    secret = "super secret";
 
                 // exit() the instance created by the beforeEach hook
                 // we're creating our own instance for this test
                 phantom.exit();
 
-                phantom = new Phantom(childProcess, port);
+                phantom = new Phantom(childProcess, port, secret);
                 expect(phantom.childProcess).to.equal(childProcess);
                 expect(phantom.port).to.equal(port);
+                expect(phantom.secret).to.equal(secret);
 
                 phantom.exit = function () {
                     instances.splice(instances.indexOf(this), 1);
@@ -249,7 +269,7 @@ describe("Phantom", function () {
                 });
             });
 
-            it("should provide an the config object to store all kind of configuration", function () {
+            it("should provide the config object to store all kind of configuration", function () {
                 return expect(phantom.run(function (resolve) {
                     resolve(config);
                 })).to.eventually.deep.equal({
@@ -324,6 +344,6 @@ function slow(fn) {
     return function () {
         this.slow(2000);
         this.timeout(6000);
-        return fn();
+        return fn.apply(this, arguments);
     };
 }
