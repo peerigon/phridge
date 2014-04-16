@@ -116,7 +116,6 @@ describe("Phantom", function () {
                 return phantom.run(function (resolve, reject) {
                     reject(new Error("not ok"));
                 }).catch(function (err) {
-                    expect(err).to.be.an.instanceOf(Error);
                     expect(err.message).to.equal("not ok");
                 });
             });

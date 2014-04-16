@@ -2,12 +2,14 @@
 
 var chai = require("chai"),
     when = require("when"),
+    rewire = require("rewire"),
     node = require("when/node"),
     getport = require("getport"),
     chaiAsPromised = require("chai-as-promised"),
     net = require("net"),
     Writable = require("stream").Writable,
     expect = chai.expect,
+    create = rewire("../lib/create.js"),
     phantomFarm = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js"),
@@ -25,7 +27,7 @@ describe("create(config?)", function () {
     }));
 
     it("should resolve to an instance of Phantom", slow(function () {
-        return expect(phantomFarm.create()).to.eventually.be.an.instanceOf(Phantom);
+        return expect(create()).to.eventually.be.an.instanceOf(Phantom);
     }));
 
     it("should pass the provided config to phantomjs", slow(function () {
@@ -47,12 +49,11 @@ describe("create(config?)", function () {
                 // Using our stdout to determine if phantomjs entered the GhostDriver-mode.
                 server.listen(port);
 
+                phantomFarm.config("stdout", stdout);
                 phantomFarm.create({
-                    webdriver: "localhost:" + port,
-                    phantomFarm: {
-                        stdout: stdout
-                    }
+                    webdriver: "localhost:" + port
                 });
+                phantomFarm.config("stdout", process.stdout);
 
                 return when.promise(function (resolve, reject) {
                     setTimeout(function () {
@@ -69,7 +70,7 @@ describe("create(config?)", function () {
     it("should share a secret with the phantomjs process so no untrusted code can be executed", slow(function () {
         var evilCode = "resolve('harharhar')";
 
-        return expect(phantomFarm.create()
+        return expect(create()
             .then(function (phantom) {
                 return request({
                     port: phantom.port,
