@@ -173,6 +173,20 @@ describe("Phantom", function () {
                 })).to.be.rejectedWith("Can't find variable: undefinedVariable");
             });
 
+            it("should preserve all error details like stack traces", function () {
+                return phantom.run(function brokenFunction() {
+                    undefinedVariable;
+                }).catch(function (err) {
+                    expect(err).to.have.property("message", "Can't find variable: undefinedVariable");
+                    expect(err).to.have.property("line", 2);
+                    expect(err).to.have.property("stack", "ReferenceError: Can't find variable: undefinedVariable\n    at brokenFunction (:2)\n    at :3");
+                    expect(err.stackArray).to.deep.equal([
+                        { "function": "brokenFunction", sourceURL: "", line: 2 },
+                        { sourceURL: "", line: 3 }
+                    ]);
+                });
+            });
+
         });
 
         describe(".exit()", function () {
