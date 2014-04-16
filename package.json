@@ -4,7 +4,7 @@
   "description": "Run your own little farm of cute phantomjs processes",
   "main": "./lib/main.js",
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha test/main.test.js -R spec"
+    "test": "node node_modules/mocha/bin/mocha -R spec"
   },
   "keywords": [
     "phantom",
