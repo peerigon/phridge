@@ -11,7 +11,7 @@ var chai = require("chai"),
     phantomFarm = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js"),
-    request = require("./helpers/request.js");
+    request = require("../lib/request.js");
 
 chai.config.includeStack = true;
 chai.use(chaiAsPromised);
@@ -72,10 +72,10 @@ describe("create(config?)", function () {
         return expect(phantomFarm.create()
             .then(function (phantom) {
                 return request({
-                    port:    phantom.port,
-                    path:    "/",
-                    method:  "POST"
-                }, evilCode);
+                    port: phantom.port,
+                    path: "/",
+                    body: evilCode
+                });
             }))
             .to.eventually.have.property("statusCode", 403);
     }));

@@ -2,11 +2,15 @@
 
 var chai = require("chai"),
     when = require("when"),
+    chaiAsPromised = require("chai-as-promised"),
     expect = chai.expect,
     phantomFarm = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     instances = require("../lib/instances.js"),
     slow = require("./helpers/slow.js");
+
+chai.config.includeStack = true;
+chai.use(chaiAsPromised);
 
 describe("Phantom", function () {
     var phantom;
