@@ -15,10 +15,6 @@ var chai = require("chai"),
 
 var request;
 
-// enable global promise shim
-// @see https://github.com/cujojs/when/blob/master/docs/es6-promise-shim.md
-require("when/es6-shim/Promise");
-
 chai.config.includeStack = true;
 chai.use(chaiAsPromised);
 
@@ -32,10 +28,6 @@ describe("phantom-farm", function () {
     }));
 
     describe(".create(config?)", function () {
-
-        it("should return a promise", function () {
-            expect(phantomFarm.create()).to.be.an.instanceOf(Promise);
-        });
 
         it("should resolve to an instance of Phantom", slow(function () {
             return phantomFarm.create().then(function (phantom) {
@@ -69,7 +61,7 @@ describe("phantom-farm", function () {
                         }
                     });
 
-                    return new Promise(function (resolve, reject) {
+                    return when.promise(function (resolve, reject) {
                         setTimeout(function () {
                             if (message.search("GhostDriver") === -1) {
                                 reject(new Error("GhostDriver config not recognized"));
@@ -85,7 +77,7 @@ describe("phantom-farm", function () {
             var evilCode = "resolve('harharhar')";
 
             return phantomFarm.create().then(function (phantom) {
-                return new Promise(function (resolve) {
+                return when.promise(function (resolve) {
                     http.request({
                         host:    "localhost",
                         port:    phantom.port,
@@ -105,10 +97,6 @@ describe("phantom-farm", function () {
     });
 
     describe(".exitAll()", function () {
-
-        it("should return a promise", function () {
-            expect(phantomFarm.exitAll()).to.be.an.instanceOf(Promise);
-        });
 
         it("should exit cleanly all running phantomjs instances", slow(function () {
             var exitted = [];
@@ -199,10 +187,6 @@ describe("Phantom", function () {
         });
 
         describe(".run(fn, params?)", function () {
-
-            it("should return a promise", function () {
-                expect(phantom.run(function (resolve) { resolve(); })).to.be.an.instanceOf(Promise);
-            });
 
             it("should provide a resolve function", function () {
                 return expect(phantom.run(function (resolve) {
@@ -303,10 +287,6 @@ describe("Phantom", function () {
         });
 
         describe(".exit()", function () {
-
-            it("should return a promise", function () {
-                expect(phantom.exit()).to.be.an.instanceOf(Promise);
-            });
 
             it("should terminate the child process with exit-code 0 and then resolve", slow(function (done) {
                 var exit = false;

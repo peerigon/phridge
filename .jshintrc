@@ -3,7 +3,6 @@
     "node": true,
     "expr": true,
     "predef": [         // Extra globals.
-        "Promise",
         "describe",
         "it",
         "before",
