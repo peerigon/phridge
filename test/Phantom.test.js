@@ -173,30 +173,31 @@ describe("Phantom", function () {
 
         describe(".exit()", function () {
 
-            it("should terminate the child process with exit-code 0 and then resolve", slow(function (done) {
+            it("should terminate the child process with exit-code 0 and then resolve", slow(function () {
                 var exit = false;
 
                 phantom.childProcess.on("exit", function (code) {
                     expect(code).to.equal(0);
                     exit = true;
                 });
-                phantom.exit().then(function () {
+
+                return phantom.exit().then(function () {
                     expect(exit).to.equal(true);
-                    done();
-                }, done);
+                });
             }));
 
-            it("should remove the instance from the instances array", slow(function (done) {
+            it("should remove the instance from the instances array", slow(function () {
                 phantom.exit().then(function () {
                     expect(instances).to.not.contain(phantom);
-                    done();
-                }, done);
+                });
             }));
 
-            it("should be save to call .exit() multiple times", slow(function (done) {
-                phantom.exit();
-                phantom.exit();
-                phantom.exit().then(done, done);
+            it("should be save to call .exit() multiple times", slow(function () {
+                return when.all([
+                    phantom.exit(),
+                    phantom.exit(),
+                    phantom.exit()
+                ]);
             }));
 
         });

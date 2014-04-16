@@ -7,19 +7,16 @@ var chai = require("chai"),
     chaiAsPromised = require("chai-as-promised"),
     net = require("net"),
     Writable = require("stream").Writable,
-    http = require("http"),
     expect = chai.expect,
     phantomFarm = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
-    slow = require("./helpers/slow.js");
-
-var request;
+    slow = require("./helpers/slow.js"),
+    request = require("./helpers/request.js");
 
 chai.config.includeStack = true;
 chai.use(chaiAsPromised);
 
 getport = node.lift(getport);
-request = node.lift(http.request);
 
 describe("create(config?)", function () {
 
@@ -28,9 +25,7 @@ describe("create(config?)", function () {
     }));
 
     it("should resolve to an instance of Phantom", slow(function () {
-        return phantomFarm.create().then(function (phantom) {
-            expect(phantom).to.be.an.instanceOf(Phantom);
-        });
+        return expect(phantomFarm.create()).to.eventually.be.an.instanceOf(Phantom);
     }));
 
     it("should pass the provided config to phantomjs", slow(function () {
@@ -74,22 +69,15 @@ describe("create(config?)", function () {
     it("should share a secret with the phantomjs process so no untrusted code can be executed", slow(function () {
         var evilCode = "resolve('harharhar')";
 
-        return phantomFarm.create().then(function (phantom) {
-            return when.promise(function (resolve) {
-                http.request({
-                    host:    "localhost",
+        return expect(phantomFarm.create()
+            .then(function (phantom) {
+                return request({
                     port:    phantom.port,
                     path:    "/",
-                    method:  "POST",
-                    headers: {
-                        "Content-Length": evilCode.length,
-                        "Content-Type":   "application/json"
-                    }
-                }, resolve).end(evilCode, "utf8");
-            });
-        }).then(function (response) {
-            expect(response.statusCode).to.equal(403);
-        });
+                    method:  "POST"
+                }, evilCode);
+            }))
+            .to.eventually.have.property("statusCode", 403);
     }));
 
 });
