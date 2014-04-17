@@ -24,6 +24,8 @@
     "mocha": "1.x",
     "chai": "1.x",
     "chai-as-promised": "4.x",
+    "sinon-chai": "2.x",
+    "sinon": "1.x",
     "rewire": "2.x"
   },
   "repository": {

@@ -49,11 +49,11 @@ describe("create(config?)", function () {
                 // Using our stdout to determine if phantomjs entered the GhostDriver-mode.
                 server.listen(port);
 
-                phantomFarm.config("stdout", stdout);
+                phantomFarm.config.stdout = stdout;
                 phantomFarm.create({
                     webdriver: "localhost:" + port
                 });
-                phantomFarm.config("stdout", process.stdout);
+                phantomFarm.config.stdout = process.stdout;
 
                 return when.promise(function (resolve, reject) {
                     setTimeout(function () {

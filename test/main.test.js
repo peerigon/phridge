@@ -13,8 +13,8 @@ describe("phantom-farm", function () {
 
     describe(".config", function () {
 
-        it("should be the config's-module set-function", function () {
-            expect(phantomFarm.config).to.equal(config.set);
+        it("should be the config-module", function () {
+            expect(phantomFarm.config).to.equal(config);
         });
 
     });
