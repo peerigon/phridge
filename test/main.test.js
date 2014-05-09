@@ -5,16 +5,16 @@ var chai = require("chai"),
     config = require("../lib/config"),
     create = require("../lib/create"),
     exitAll = require("../lib/exitAll"),
-    phantomFarm = require("../lib/main.js");
+    phridge = require("../lib/main.js");
 
 chai.config.includeStack = true;
 
-describe("phantom-farm", function () {
+describe("phridge", function () {
 
     describe(".config", function () {
 
         it("should be the config-module", function () {
-            expect(phantomFarm.config).to.equal(config);
+            expect(phridge.config).to.equal(config);
         });
 
     });
@@ -22,7 +22,7 @@ describe("phantom-farm", function () {
     describe(".create", function () {
 
         it("should be the create-module", function () {
-            expect(phantomFarm.create).to.equal(create);
+            expect(phridge.create).to.equal(create);
         });
 
     });
@@ -30,7 +30,7 @@ describe("phantom-farm", function () {
     describe(".exitAll", function () {
 
         it("should be the exitAll-module", function () {
-            expect(phantomFarm.exitAll).to.equal(exitAll);
+            expect(phridge.exitAll).to.equal(exitAll);
         });
 
     });

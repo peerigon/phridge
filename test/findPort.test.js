@@ -9,7 +9,7 @@ var chai = require("chai"),
     slow = require("./helpers/slow.js"),
     findPort = rewire("../lib/findPort.js"),
     getport = require("getport"),
-    phantomFarm = require("../lib/main.js");
+    phridge = require("../lib/main.js");
 
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
@@ -30,9 +30,9 @@ describe("findPort()", function () {
         var getportSpy = sinon.spy();
 
         findPort.__set__("getport", getportSpy);
-        phantomFarm.config.minPort = 30000;
+        phridge.config.minPort = 30000;
         findPort();
-        phantomFarm.config.minPort = 2000;
+        phridge.config.minPort = 2000;
         expect(getportSpy.firstCall.args[0]).to.equal(30000);
     });
 
@@ -41,7 +41,7 @@ describe("findPort()", function () {
 
         findPort.__set__("getport", getportSpy);
 
-        phantomFarm.config.maxPort = 30000;
+        phridge.config.maxPort = 30000;
         findPort();
         expect(getportSpy.firstCall.args[1]).to.equal(30000);
     });

@@ -10,7 +10,7 @@ var chai = require("chai"),
     Writable = require("stream").Writable,
     expect = chai.expect,
     create = rewire("../lib/create.js"),
-    phantomFarm = require("../lib/main.js"),
+    phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js"),
     request = require("../lib/request.js");
@@ -23,7 +23,7 @@ getport = node.lift(getport);
 describe("create(config?)", function () {
 
     after(slow(function () {
-        return phantomFarm.exitAll();
+        return phridge.exitAll();
     }));
 
     it("should resolve to an instance of Phantom", slow(function () {
@@ -49,11 +49,11 @@ describe("create(config?)", function () {
                 // Using our stdout to determine if phantomjs entered the GhostDriver-mode.
                 server.listen(port);
 
-                phantomFarm.config.stdout = stdout;
-                phantomFarm.create({
+                phridge.config.stdout = stdout;
+                phridge.create({
                     webdriver: "localhost:" + port
                 });
-                phantomFarm.config.stdout = process.stdout;
+                phridge.config.stdout = process.stdout;
 
                 return when.promise(function (resolve, reject) {
                     setTimeout(function () {

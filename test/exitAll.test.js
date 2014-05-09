@@ -4,7 +4,7 @@ var chai = require("chai"),
     when = require("when"),
     chaiAsPromised = require("chai-as-promised"),
     expect = chai.expect,
-    phantomFarm = require("../lib/main.js"),
+    phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js");
 
@@ -17,16 +17,16 @@ describe("exitAll()", function () {
         var exitted = [];
 
         return when.all([
-                phantomFarm.create(),
-                phantomFarm.create(),
-                phantomFarm.create()
+                phridge.create(),
+                phridge.create(),
+                phridge.create()
             ])
             .then(function (p) {
                 p[0].childProcess.on("exit", function () { exitted.push(0); });
                 p[1].childProcess.on("exit", function () { exitted.push(1); });
                 p[2].childProcess.on("exit", function () { exitted.push(2); });
 
-                return phantomFarm.exitAll();
+                return phridge.exitAll();
             })
             .then(function () {
                 exitted.sort();

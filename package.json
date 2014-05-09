@@ -1,7 +1,7 @@
 {
-  "name": "phantom-farm",
+  "name": "phridge",
   "version": "0.1.0",
-  "description": "Run your own little farm of cute phantomjs processes",
+  "description": "A bridge between node and phantomjs",
   "main": "./lib/main.js",
   "scripts": {
     "test": "node node_modules/mocha/bin/mocha -R spec"
@@ -30,7 +30,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/peerigon/phantom-farm.git"
+    "url": "https://github.com/peerigon/phridge.git"
   },
   "author": "peerigon <developers@peerigon.com>",
   "license": "Unlicense"

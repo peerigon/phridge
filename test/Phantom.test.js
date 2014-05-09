@@ -4,7 +4,7 @@ var chai = require("chai"),
     when = require("when"),
     chaiAsPromised = require("chai-as-promised"),
     expect = chai.expect,
-    phantomFarm = require("../lib/main.js"),
+    phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     instances = require("../lib/instances.js"),
     slow = require("./helpers/slow.js");
@@ -16,7 +16,7 @@ describe("Phantom", function () {
     var phantom;
 
     beforeEach(slow(function () {
-        return phantomFarm.create().then(function (newPhantom) {
+        return phridge.create().then(function (newPhantom) {
             phantom = newPhantom;
         });
     }));
@@ -145,7 +145,7 @@ describe("Phantom", function () {
                 return expect(phantom.run(function (resolve) {
                     resolve(config);
                 })).to.eventually.deep.equal({
-                    phantomFarm: {
+                    phridge: {
                         port: phantom.port,
                         secret: phantom.secret
                     }
