@@ -5,18 +5,17 @@ var chai = require("chai"),
     rewire = require("rewire"),
     node = require("when/node"),
     getport = require("getport"),
-    chaiAsPromised = require("chai-as-promised"),
     net = require("net"),
-    Writable = require("stream").Writable,
     expect = chai.expect,
     create = rewire("../lib/create.js"),
     phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js"),
-    request = require("../lib/request.js");
+    request = require("../lib/request.js"),
+    createWritableMock = require("./helpers/createWritableMock.js");
 
 chai.config.includeStack = true;
-chai.use(chaiAsPromised);
+chai.use(require("chai-as-promised"));
 
 getport = node.lift(getport);
 
@@ -31,13 +30,7 @@ describe("create(config?)", function () {
     }));
 
     it("should pass the provided config to phantomjs", slow(function () {
-        var stdout = new Writable(),
-            message = "";
-
-        stdout._write = function (chunk, encoding, callback) {
-            message += chunk.toString();
-            setImmediate(callback);
-        };
+        var fakeStdout = createWritableMock();
 
         return getport(10000)
             .then(function (port) {
@@ -49,7 +42,7 @@ describe("create(config?)", function () {
                 // Using our stdout to determine if phantomjs entered the GhostDriver-mode.
                 server.listen(port);
 
-                phridge.config.stdout = stdout;
+                phridge.config.stdout = fakeStdout;
                 phridge.create({
                     webdriver: "localhost:" + port
                 });
@@ -57,7 +50,7 @@ describe("create(config?)", function () {
 
                 return when.promise(function (resolve, reject) {
                     setTimeout(function () {
-                        if (message.search("GhostDriver") === -1) {
+                        if (fakeStdout.message.search("GhostDriver") === -1) {
                             reject(new Error("GhostDriver config not recognized"));
                         } else {
                             resolve();

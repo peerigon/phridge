@@ -2,109 +2,90 @@
 
 var chai = require("chai"),
     when = require("when"),
+    Page = require("../lib/Page.js"),
+    sinon = require("sinon"),
     expect = chai.expect,
     phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
-    Page = require("../lib/Page.js"),
-    instances = require("../lib/instances.js"),
     slow = require("./helpers/slow.js"),
+    testServer = require("./helpers/testServer.js"),
     createWritableMock = require("./helpers/createWritableMock.js"),
-    testServer = require("./helpers/testServer.js");
+    request = require("../lib/request.js");
 
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
+chai.use(require("sinon-chai"));
 
-describe("Phantom", function () {
-    var fakeStderr = createWritableMock(),
-        phantom,
-        childProcess = {
-            on: function () {}
-        },
-        port = 3000,
-        secret = "super secret",
-        createPhantom,
-        exitPhantom;
-
-    createPhantom = slow(function () {
-        phridge.config.stderr = fakeStderr;
-        return phridge.create().then(function (newPhantom) {
-            phantom = newPhantom;
-        });
-    });
-    exitPhantom = slow(function () {
-        phridge.config.stderr = process.stderr;
-        return phantom.exit();
-    });
+describe("Page", function () {
 
     describe(".prototype", function () {
+        var fakeStderr = createWritableMock(),
+            phantom,
+            page;
 
-        describe(".constructor(childProcess, port, secret)", function () {
+        function createPage() {
+            page = phantom.createPage();
+        }
 
-            it("should return an instance of Phantom", function () {
-                phantom = new Phantom(childProcess, port, secret);
-                expect(phantom).to.be.an.instanceOf(Phantom);
+        before(slow(function () {
+            phridge.config.stderr = fakeStderr;
+            return phridge.create({ }).then(function (newPhantom) {
+                phantom = newPhantom;
             });
+        }));
 
-            it("should set the childProcess, port and secret accordingly", function () {
-                phantom = new Phantom(childProcess, port, secret);
-                expect(phantom.childProcess).to.equal(childProcess);
-                expect(phantom.port).to.equal(port);
-                expect(phantom.secret).to.equal(secret);
-            });
+        after(slow(function () {
+            phridge.config.stderr = process.stderr;
+            return phantom.exit();
+        }));
 
-            it("should add the instance to the instances array", function () {
-                expect(instances).to.contain(phantom);
-            });
+        describe(".constructor(phantom, id)", function () {
 
-        });
-
-        describe(".childProcess", function () {
-
-            before(createPhantom);
-
-            it("should provide a reference on the child process object created by node", function () {
-                expect(phantom.childProcess).to.be.an("object");
-                expect(phantom.childProcess.stdin).to.be.an("object");
-                expect(phantom.childProcess.stdout).to.be.an("object");
-                expect(phantom.childProcess.stderr).to.be.an("object");
+            it("should return an instance of Page with the given arguments applied", function () {
+                page = new Page(phantom, 1);
+                expect(page).to.be.an.instanceOf(Page);
+                expect(page.phantom).to.equal(phantom);
+                expect(page._id).to.equal(1);
             });
 
         });
 
-        describe(".port", function () {
+        describe(".phantom", function () {
 
-            it("should be a number", function () {
-                expect(phantom.port).to.be.a("number");
+            it("should be null by default", function () {
+               expect(Page.prototype.phantom).to.equal(null);
             });
 
         });
 
         describe(".run(fn, params?)", function () {
 
+            beforeEach(createPage);
+
             it("should provide a resolve function", function () {
-                return expect(phantom.run(function (resolve) {
+                return expect(page.run(function (resolve) {
                     resolve("everything ok");
                 })).to.eventually.equal("everything ok");
             });
 
             it("should provide the possibility to resolve with any stringify-able data", function () {
                 return when.all([
-                    expect(phantom.run(function (resolve) {
+                    expect(page.run(function (resolve) {
                         resolve();
                     })).to.eventually.equal(undefined),
-                    expect(phantom.run(function (resolve) {
+                    expect(page.run(function (resolve) {
                         resolve(true);
                     })).to.eventually.equal(true),
-                    expect(phantom.run(function (resolve) {
+                    expect(page.run(function (resolve) {
                         resolve(2);
                     })).to.eventually.equal(2),
-                    expect(phantom.run(function (resolve) {
+                    expect(page.run(function (resolve) {
                         resolve(null);
                     })).to.eventually.equal(null),
-                    expect(phantom.run(function (resolve) {
+                    expect(page.run(function (resolve) {
                         resolve([1, 2, 3]);
                     })).to.eventually.deep.equal([1, 2, 3]),
-                    expect(phantom.run(function (resolve) {
+                    expect(page.run(function (resolve) {
                         resolve({
                             someArr: [1, 2, 3],
                             otherObj: {}
@@ -117,7 +98,7 @@ describe("Phantom", function () {
             });
 
             it("should provide a reject function", function () {
-                return phantom.run(function (resolve, reject) {
+                return page.run(function (resolve, reject) {
                     reject(new Error("not ok"));
                 }).catch(function (err) {
                     expect(err.message).to.equal("not ok");
@@ -125,7 +106,7 @@ describe("Phantom", function () {
             });
 
             it("should provide all phantomjs default modules as convenience", function () {
-                return phantom.run(function (resolve, reject) {
+                return page.run(function (resolve, reject) {
                     if (!webpage) {
                         return reject(new Error("webpage not available"));
                     }
@@ -146,12 +127,12 @@ describe("Phantom", function () {
             });
 
             it("should provide the config object to store all kind of configuration", function () {
-                return expect(phantom.run(function (resolve) {
+                return expect(page.run(function (resolve) {
                     resolve(config);
                 })).to.eventually.deep.equal({
                     phridge: {
-                        port: phantom.port,
-                        secret: phantom.secret
+                        port: page.phantom.port,
+                        secret: page.phantom.secret
                     }
                 });
             });
@@ -165,19 +146,19 @@ describe("Phantom", function () {
                     }
                 };
 
-                return expect(phantom.run(function (params, resolve) {
+                return expect(page.run(function (params, resolve) {
                     resolve(params);
                 }, params)).to.eventually.deep.equal(params);
             });
 
             it("should report errors", function () {
-                return expect(phantom.run(function () {
+                return expect(page.run(function () {
                     undefinedVariable;
                 })).to.be.rejectedWith("Can't find variable: undefinedVariable");
             });
 
             it("should preserve all error details like stack traces", function () {
-                return phantom.run(function brokenFunction() {
+                return page.run(function brokenFunction() {
                     undefinedVariable;
                 }).catch(function (err) {
                     expect(err).to.have.property("message", "Can't find variable: undefinedVariable");
@@ -196,7 +177,7 @@ describe("Phantom", function () {
                     done();
                 };
 
-                phantom.run(function (resolve) {
+                page.run(function (resolve) {
                     resolve();
                     resolve();
                 });
@@ -208,72 +189,20 @@ describe("Phantom", function () {
                     done();
                 };
 
-                phantom.run(function (resolve, reject) {
+                page.run(function (resolve, reject) {
                     reject();
                     reject();
                 });
             }));
 
-            it("should run all functions on the same empty context", function () {
-                return phantom.run(function (resolve, reject) {
-                    if (JSON.stringify(this) !== "{}") {
-                        return reject(new Error("The context is not an empty object"));
+            it("should run the function with the page as context", function () {
+                return page.run(function (resolve, reject) {
+                    if (!this.clipRect) {
+                        return reject(new Error("The function's context is not the web page"));
                     }
-                    this.message = "Hi from the first run";
                     resolve();
-                }).then(function () {
-                    return phantom.run(function (resolve, reject) {
-                        if (this.message !== "Hi from the first run") {
-                            return reject(new Error("The context is not persistent"));
-                        }
-                        resolve();
-                    });
                 });
             });
-
-        });
-
-        describe(".createPage()", function () {
-
-            after(exitPhantom);
-
-            it("should return an instance of Page", function () {
-                expect(phantom.createPage()).to.be.an.instanceOf(Page);
-            });
-
-        });
-
-        describe(".exit()", function () {
-
-            beforeEach(createPhantom);
-            afterEach(exitPhantom);
-
-            it("should terminate the child process with exit-code 0 and then resolve", slow(function () {
-                var exit = false;
-
-                phantom.childProcess.on("exit", function (code) {
-                    expect(code).to.equal(0);
-                    exit = true;
-                });
-
-                return phantom.exit().then(function () {
-                    expect(exit).to.equal(true);
-                });
-            }));
-
-            it("should remove the instance from the instances array", slow(function () {
-                phantom.exit().then(function () {
-                    expect(instances).to.not.contain(phantom);
-                });
-            }));
-
-            it("should be save to call .exit() multiple times", slow(function () {
-                return when.all([
-                    phantom.exit(),
-                    phantom.exit(),
-                    phantom.exit()
-                ]);
-            }));
 
         });
 
