@@ -6,6 +6,7 @@ var http = require("http"),
     fs = require("fs");
 
 var testPage = fs.readFileSync(__dirname + "/testPage.html", "utf8"),
+    alamidLogo = fs.readFileSync(__dirname + "/alamid.png"),
     server;
 
 function start() {
@@ -13,7 +14,7 @@ function start() {
     var self = this;
 
     return when.promise(function (resolve, reject) {
-        getport(function (err, port) {
+        getport(30000, function (err, port) {
             if (err) {
                 return reject(err);
             }
@@ -21,7 +22,7 @@ function start() {
                 stop();
             }
             server = http
-                .createServer(serveTestPage)
+                .createServer(serveTestFiles)
                 .listen(port, function onListen(err) {
                     if (err) {
                         return reject(err);
@@ -38,7 +39,12 @@ function stop() {
     server.removeAllListeners();
 }
 
-function serveTestPage(req, res) {
+function serveTestFiles(req, res) {
+    if (req.url.indexOf("alamid") > -1) {
+        res.setHeader("Content-Type", "image/png");
+        res.end(alamidLogo);
+        return;
+    }
     res.setHeader("Content-Type", "text/html; charset=utf8");
     res.end(testPage, "utf8");
 }

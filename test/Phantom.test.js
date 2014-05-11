@@ -26,6 +26,9 @@ describe("Phantom", function () {
         exitPhantom;
 
     createPhantom = slow(function () {
+        if (phantom && phantom.exitted === false) {
+            return;
+        }
         phridge.config.stderr = fakeStderr;
         return phridge.create().then(function (newPhantom) {
             phantom = newPhantom;
@@ -36,13 +39,22 @@ describe("Phantom", function () {
         return phantom.exit();
     });
 
+    before(testServer.start);
+    beforeEach(createPhantom);
+    after(exitPhantom);
+    after(testServer.stop);
+
     describe(".prototype", function () {
 
         describe(".constructor(childProcess, port, secret)", function () {
 
+            after(function () {
+                phantom = null;
+            });
+
             it("should return an instance of Phantom", function () {
                 phantom = new Phantom(childProcess, port, secret);
-                expect(phantom).to.be.an.instanceOf(Phantom);
+                expect(phantom).to.be.an.instanceof(Phantom);
             });
 
             it("should set the childProcess, port and secret accordingly", function () {
@@ -59,8 +71,6 @@ describe("Phantom", function () {
         });
 
         describe(".childProcess", function () {
-
-            before(createPhantom);
 
             it("should provide a reference on the child process object created by node", function () {
                 expect(phantom.childProcess).to.be.an("object");
@@ -235,18 +245,48 @@ describe("Phantom", function () {
 
         describe(".createPage()", function () {
 
-            after(exitPhantom);
-
             it("should return an instance of Page", function () {
-                expect(phantom.createPage()).to.be.an.instanceOf(Page);
+                expect(phantom.createPage()).to.be.an.instanceof(Page);
             });
 
         });
 
-        describe(".exit()", function () {
+        describe(".openPage(url)", function () {
 
-            beforeEach(createPhantom);
-            afterEach(exitPhantom);
+            it("should resolve to an instance of Page", function () {
+                return expect(phantom.openPage(this.testServerUrl)).to.eventually.be.an.instanceof(Page);
+            });
+
+            it("should resolve when the given page has loaded", slow(function () {
+                return phantom.openPage(this.testServerUrl).then(function (page) {
+                    return page.run(function (resolve, reject) {
+                        var headline,
+                            imgIsLoaded;
+
+                        headline = this.evaluate(function () {
+                            /* jshint browser:true */
+                            return document.querySelector("h1").innerText;
+                        });
+                        imgIsLoaded = this.evaluate(function () {
+                            /* jshint browser:true */
+                            return document.querySelector("img").width > 0;
+                        });
+
+                        if (headline !== "This is a test page") {
+                            return reject(new Error("Unexpected headline: " + headline));
+                        }
+                        if (imgIsLoaded !== true) {
+                            return reject(new Error("The image has not loaded yet"));
+                        }
+
+                        resolve();
+                    });
+                });
+            }));
+
+        });
+
+        describe(".exit()", function () {
 
             it("should terminate the child process with exit-code 0 and then resolve", slow(function () {
                 var exit = false;
