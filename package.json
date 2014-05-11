@@ -9,6 +9,8 @@
   "keywords": [
     "phantom",
     "phantomjs",
+    "bridge",
+    "communication",
     "process",
     "subprocess",
     "long-term",
