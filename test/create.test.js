@@ -22,7 +22,7 @@ getport = node.lift(getport);
 describe("create(config?)", function () {
 
     after(slow(function () {
-        return phridge.exitAll();
+        return phridge.disposeAll();
     }));
 
     it("should resolve to an instance of Phantom", slow(function () {

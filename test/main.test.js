@@ -4,7 +4,7 @@ var chai = require("chai"),
     expect = chai.expect,
     config = require("../lib/config"),
     create = require("../lib/create"),
-    exitAll = require("../lib/exitAll"),
+    disposeAll = require("../lib/disposeAll"),
     phridge = require("../lib/main.js");
 
 chai.config.includeStack = true;
@@ -27,10 +27,10 @@ describe("phridge", function () {
 
     });
 
-    describe(".exitAll", function () {
+    describe(".disposeAll", function () {
 
         it("should be the exitAll-module", function () {
-            expect(phridge.exitAll).to.equal(exitAll);
+            expect(phridge.disposeAll).to.equal(disposeAll);
         });
 
     });

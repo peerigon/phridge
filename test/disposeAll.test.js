@@ -11,7 +11,7 @@ var chai = require("chai"),
 chai.config.includeStack = true;
 chai.use(chaiAsPromised);
 
-describe("exitAll()", function () {
+describe("disposeAll()", function () {
 
     it("should exit cleanly all running phantomjs instances", slow(function () {
         var exitted = [];
@@ -26,7 +26,7 @@ describe("exitAll()", function () {
                 p[1].childProcess.on("exit", function () { exitted.push(1); });
                 p[2].childProcess.on("exit", function () { exitted.push(2); });
 
-                return phridge.exitAll();
+                return phridge.disposeAll();
             })
             .then(function () {
                 exitted.sort();

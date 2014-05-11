@@ -8,9 +8,7 @@ var chai = require("chai"),
     phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js"),
-    testServer = require("./helpers/testServer.js"),
-    createWritableMock = require("./helpers/createWritableMock.js"),
-    request = require("../lib/request.js");
+    createWritableMock = require("./helpers/createWritableMock.js");
 
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
@@ -36,7 +34,7 @@ describe("Page", function () {
 
         after(slow(function () {
             phridge.config.stderr = process.stderr;
-            return phantom.exit();
+            return phantom.dispose();
         }));
 
         describe(".constructor(phantom, id)", function () {
@@ -58,81 +56,155 @@ describe("Page", function () {
 
         });
 
-        describe(".run(fn, params?)", function () {
+        describe(".run(arg1, arg2, arg3, fn)", function () {
 
             beforeEach(createPage);
 
-            it("should provide a resolve function", function () {
-                return expect(page.run(function (resolve) {
-                    resolve("everything ok");
-                })).to.eventually.equal("everything ok");
-            });
+            describe("with fn being an asynchronous function", function () {
 
-            it("should provide the possibility to resolve with any stringify-able data", function () {
-                return when.all([
-                    expect(page.run(function (resolve) {
-                        resolve();
-                    })).to.eventually.equal(undefined),
-                    expect(page.run(function (resolve) {
-                        resolve(true);
-                    })).to.eventually.equal(true),
-                    expect(page.run(function (resolve) {
-                        resolve(2);
-                    })).to.eventually.equal(2),
-                    expect(page.run(function (resolve) {
-                        resolve(null);
-                    })).to.eventually.equal(null),
-                    expect(page.run(function (resolve) {
-                        resolve([1, 2, 3]);
-                    })).to.eventually.deep.equal([1, 2, 3]),
-                    expect(page.run(function (resolve) {
-                        resolve({
+                it("should provide a resolve function", function () {
+                    return expect(page.run(function (resolve) {
+                        resolve("everything ok");
+                    })).to.eventually.equal("everything ok");
+                });
+
+                it("should provide the possibility to resolve with any stringify-able data", function () {
+                    return when.all([
+                        expect(page.run(function (resolve) {
+                            resolve();
+                        })).to.eventually.equal(undefined),
+                        expect(page.run(function (resolve) {
+                            resolve(true);
+                        })).to.eventually.equal(true),
+                        expect(page.run(function (resolve) {
+                            resolve(2);
+                        })).to.eventually.equal(2),
+                        expect(page.run(function (resolve) {
+                            resolve(null);
+                        })).to.eventually.equal(null),
+                        expect(page.run(function (resolve) {
+                            resolve([1, 2, 3]);
+                        })).to.eventually.deep.equal([1, 2, 3]),
+                        expect(page.run(function (resolve) {
+                            resolve({
+                                someArr: [1, 2, 3],
+                                otherObj: {}
+                            });
+                        })).to.eventually.deep.equal({
                             someArr: [1, 2, 3],
                             otherObj: {}
-                        });
-                    })).to.eventually.deep.equal({
-                        someArr: [1, 2, 3],
-                        otherObj: {}
-                    })
-                ]);
+                        })
+                    ]);
+                });
+
+                it("should provide a reject function", function () {
+                    return page.run(function (resolve, reject) {
+                        reject(new Error("not ok"));
+                    }).catch(function (err) {
+                        expect(err.message).to.equal("not ok");
+                    });
+                });
+
+                it("should print an error if the request has already been resolved", slow(function (done) {
+                    fakeStderr.callback = function () {
+                        expect(fakeStderr.message).to.contain("Cannot resolve value: The response has already been closed. Have you called resolve/reject twice?");
+                        done();
+                    };
+
+                    page.run(function (resolve) {
+                        resolve();
+                        resolve();
+                    });
+                }));
+
+                it("should print an error if the request has already been rejected", slow(function (done) {
+                    fakeStderr.callback = function () {
+                        expect(fakeStderr.message).to.contain("Cannot reject value: The response has already been closed. Have you called resolve/reject twice?");
+                        done();
+                    };
+
+                    page.run(function (resolve, reject) {
+                        reject();
+                        reject();
+                    });
+                }));
+
             });
 
-            it("should provide a reject function", function () {
-                return page.run(function (resolve, reject) {
-                    reject(new Error("not ok"));
-                }).catch(function (err) {
-                    expect(err.message).to.equal("not ok");
+            describe("with fn being a synchronous function", function () {
+
+                it("should resolve to the returned value", function () {
+                    return expect(page.run(function () {
+                        return "everything ok";
+                    })).to.eventually.equal("everything ok");
                 });
+
+                it("should provide the possibility to resolve with any stringify-able data", function () {
+                    return when.all([
+                        expect(page.run(function () {
+                            // returns undefined
+                        })).to.eventually.equal(undefined),
+                        expect(page.run(function () {
+                            return true;
+                        })).to.eventually.equal(true),
+                        expect(page.run(function () {
+                            return 2;
+                        })).to.eventually.equal(2),
+                        expect(page.run(function () {
+                            return null;
+                        })).to.eventually.equal(null),
+                        expect(page.run(function () {
+                            return [1, 2, 3];
+                        })).to.eventually.deep.equal([1, 2, 3]),
+                        expect(page.run(function () {
+                            return {
+                                someArr: [1, 2, 3],
+                                otherObj: {}
+                            };
+                        })).to.eventually.deep.equal({
+                            someArr: [1, 2, 3],
+                            otherObj: {}
+                        })
+                    ]);
+                });
+
+                it("should reject the promise if fn throws an error", function () {
+                    return page.run(function () {
+                        throw new Error("not ok");
+                    }).catch(function (err) {
+                        expect(err.message).to.equal("not ok");
+                    });
+                });
+
             });
 
             it("should provide all phantomjs default modules as convenience", function () {
-                return page.run(function (resolve, reject) {
+                return page.run(function () {
                     if (!webpage) {
-                        return reject(new Error("webpage not available"));
+                        throw new Error("webpage not available");
                     }
                     if (!system) {
-                        return reject(new Error("system not available"));
+                        throw new Error("system not available");
                     }
                     if (!fs) {
-                        return reject(new Error("fs not available"));
+                        throw new Error("fs not available");
                     }
                     if (!webserver) {
-                        return reject(new Error("webserver not available"));
+                        throw new Error("webserver not available");
                     }
                     if (!child_process) {
-                        return reject(new Error("child_process not available"));
+                        throw new Error("child_process not available");
                     }
-                    resolve();
                 });
             });
 
             it("should provide the config object to store all kind of configuration", function () {
-                return expect(page.run(function (resolve) {
-                    resolve(config);
+                return expect(page.run(function () {
+                    return config;
                 })).to.eventually.deep.equal({
                     phridge: {
-                        port: page.phantom.port,
-                        secret: page.phantom.secret
+                        port: phantom.port,
+                        secret: phantom.secret
                     }
                 });
             });
@@ -146,9 +218,9 @@ describe("Page", function () {
                     }
                 };
 
-                return expect(page.run(function (params, resolve) {
-                    resolve(params);
-                }, params)).to.eventually.deep.equal(params);
+                return expect(page.run(params, params, params, function (params1, params2, params3) {
+                    return [params1, params2, params3];
+                })).to.eventually.deep.equal([params, params, params]);
             });
 
             it("should report errors", function () {
@@ -171,36 +243,11 @@ describe("Page", function () {
                 });
             });
 
-            it("should print an error if the request has already been resolved", slow(function (done) {
-                fakeStderr.callback = function () {
-                    expect(fakeStderr.message).to.contain("Cannot resolve value: The response has already been closed. Have you called resolve/reject twice?");
-                    done();
-                };
-
-                page.run(function (resolve) {
-                    resolve();
-                    resolve();
-                });
-            }));
-
-            it("should print an error if the request has already been reject", slow(function (done) {
-                fakeStderr.callback = function () {
-                    expect(fakeStderr.message).to.contain("Cannot reject value: The response has already been closed. Have you called resolve/reject twice?");
-                    done();
-                };
-
-                page.run(function (resolve, reject) {
-                    reject();
-                    reject();
-                });
-            }));
-
             it("should run the function with the page as context", function () {
-                return page.run(function (resolve, reject) {
+                return page.run(function () {
                     if (!this.clipRect) {
-                        return reject(new Error("The function's context is not the web page"));
+                        throw new Error("The function's context is not the web page");
                     }
-                    resolve();
                 });
             });
 
@@ -212,12 +259,12 @@ describe("Page", function () {
                 var pageId = page._id;
 
                 page.dispose();
-                phantom.run(function (params, resolve, reject) {
-                    if (pages[params.pageId]) {
+                phantom.run(pageId, function (pageId, resolve, reject) {
+                    if (pages[pageId]) {
                         return reject(new Error("page is still present in the page-object"));
                     }
                     resolve();
-                }, { pageId: pageId });
+                });
             });
 
             it("should remove the phantom reference", function () {

@@ -36,7 +36,7 @@ describe("Phantom", function () {
     });
     exitPhantom = slow(function () {
         phridge.config.stderr = process.stderr;
-        return phantom.exit();
+        return phantom.dispose();
     });
 
     before(testServer.start);
@@ -89,75 +89,149 @@ describe("Phantom", function () {
 
         });
 
-        describe(".run(fn, params?)", function () {
+        describe(".run(arg1, arg2, arg3, fn)", function () {
 
-            it("should provide a resolve function", function () {
-                return expect(phantom.run(function (resolve) {
-                    resolve("everything ok");
-                })).to.eventually.equal("everything ok");
-            });
+            describe("with fn being an asynchronous function", function () {
 
-            it("should provide the possibility to resolve with any stringify-able data", function () {
-                return when.all([
-                    expect(phantom.run(function (resolve) {
-                        resolve();
-                    })).to.eventually.equal(undefined),
-                    expect(phantom.run(function (resolve) {
-                        resolve(true);
-                    })).to.eventually.equal(true),
-                    expect(phantom.run(function (resolve) {
-                        resolve(2);
-                    })).to.eventually.equal(2),
-                    expect(phantom.run(function (resolve) {
-                        resolve(null);
-                    })).to.eventually.equal(null),
-                    expect(phantom.run(function (resolve) {
-                        resolve([1, 2, 3]);
-                    })).to.eventually.deep.equal([1, 2, 3]),
-                    expect(phantom.run(function (resolve) {
-                        resolve({
+                it("should provide a resolve function", function () {
+                    return expect(phantom.run(function (resolve) {
+                        resolve("everything ok");
+                    })).to.eventually.equal("everything ok");
+                });
+
+                it("should provide the possibility to resolve with any stringify-able data", function () {
+                    return when.all([
+                        expect(phantom.run(function (resolve) {
+                            resolve();
+                        })).to.eventually.equal(undefined),
+                        expect(phantom.run(function (resolve) {
+                            resolve(true);
+                        })).to.eventually.equal(true),
+                        expect(phantom.run(function (resolve) {
+                            resolve(2);
+                        })).to.eventually.equal(2),
+                        expect(phantom.run(function (resolve) {
+                            resolve(null);
+                        })).to.eventually.equal(null),
+                        expect(phantom.run(function (resolve) {
+                            resolve([1, 2, 3]);
+                        })).to.eventually.deep.equal([1, 2, 3]),
+                        expect(phantom.run(function (resolve) {
+                            resolve({
+                                someArr: [1, 2, 3],
+                                otherObj: {}
+                            });
+                        })).to.eventually.deep.equal({
                             someArr: [1, 2, 3],
                             otherObj: {}
-                        });
-                    })).to.eventually.deep.equal({
-                        someArr: [1, 2, 3],
-                        otherObj: {}
-                    })
-                ]);
+                        })
+                    ]);
+                });
+
+                it("should provide a reject function", function () {
+                    return phantom.run(function (resolve, reject) {
+                        reject(new Error("not ok"));
+                    }).catch(function (err) {
+                        expect(err.message).to.equal("not ok");
+                    });
+                });
+
+                it("should print an error if the request has already been resolved", slow(function (done) {
+                    fakeStderr.callback = function () {
+                        expect(fakeStderr.message).to.contain("Cannot resolve value: The response has already been closed. Have you called resolve/reject twice?");
+                        done();
+                    };
+
+                    phantom.run(function (resolve) {
+                        resolve();
+                        resolve();
+                    });
+                }));
+
+                it("should print an error if the request has already been rejected", slow(function (done) {
+                    fakeStderr.callback = function () {
+                        expect(fakeStderr.message).to.contain("Cannot reject value: The response has already been closed. Have you called resolve/reject twice?");
+                        done();
+                    };
+
+                    phantom.run(function (resolve, reject) {
+                        reject();
+                        reject();
+                    });
+                }));
+
             });
 
-            it("should provide a reject function", function () {
-                return phantom.run(function (resolve, reject) {
-                    reject(new Error("not ok"));
-                }).catch(function (err) {
-                    expect(err.message).to.equal("not ok");
+            describe("with fn being a synchronous function", function () {
+
+                it("should resolve to the returned value", function () {
+                    return expect(phantom.run(function () {
+                        return "everything ok";
+                    })).to.eventually.equal("everything ok");
                 });
+
+                it("should provide the possibility to resolve with any stringify-able data", function () {
+                    return when.all([
+                        expect(phantom.run(function () {
+                            // returns undefined
+                        })).to.eventually.equal(undefined),
+                        expect(phantom.run(function () {
+                            return true;
+                        })).to.eventually.equal(true),
+                        expect(phantom.run(function () {
+                            return 2;
+                        })).to.eventually.equal(2),
+                        expect(phantom.run(function () {
+                            return null;
+                        })).to.eventually.equal(null),
+                        expect(phantom.run(function () {
+                            return [1, 2, 3];
+                        })).to.eventually.deep.equal([1, 2, 3]),
+                        expect(phantom.run(function () {
+                            return {
+                                someArr: [1, 2, 3],
+                                otherObj: {}
+                            };
+                        })).to.eventually.deep.equal({
+                            someArr: [1, 2, 3],
+                            otherObj: {}
+                        })
+                    ]);
+                });
+
+                it("should reject the promise if fn throws an error", function () {
+                    return phantom.run(function () {
+                        throw new Error("not ok");
+                    }).catch(function (err) {
+                        expect(err.message).to.equal("not ok");
+                    });
+                });
+
             });
 
             it("should provide all phantomjs default modules as convenience", function () {
-                return phantom.run(function (resolve, reject) {
+                return phantom.run(function () {
                     if (!webpage) {
-                        return reject(new Error("webpage not available"));
+                        throw new Error("webpage not available");
                     }
                     if (!system) {
-                        return reject(new Error("system not available"));
+                        throw new Error("system not available");
                     }
                     if (!fs) {
-                        return reject(new Error("fs not available"));
+                        throw new Error("fs not available");
                     }
                     if (!webserver) {
-                        return reject(new Error("webserver not available"));
+                        throw new Error("webserver not available");
                     }
                     if (!child_process) {
-                        return reject(new Error("child_process not available"));
+                        throw new Error("child_process not available");
                     }
-                    resolve();
                 });
             });
 
             it("should provide the config object to store all kind of configuration", function () {
-                return expect(phantom.run(function (resolve) {
-                    resolve(config);
+                return expect(phantom.run(function () {
+                    return config;
                 })).to.eventually.deep.equal({
                     phridge: {
                         port: phantom.port,
@@ -175,9 +249,9 @@ describe("Phantom", function () {
                     }
                 };
 
-                return expect(phantom.run(function (params, resolve) {
-                    resolve(params);
-                }, params)).to.eventually.deep.equal(params);
+                return expect(phantom.run(params, params, params, function (params1, params2, params3) {
+                    return [params1, params2, params3];
+                })).to.eventually.deep.equal([params, params, params]);
             });
 
             it("should report errors", function () {
@@ -200,43 +274,17 @@ describe("Phantom", function () {
                 });
             });
 
-            it("should print an error if the request has already been resolved", slow(function (done) {
-                fakeStderr.callback = function () {
-                    expect(fakeStderr.message).to.contain("Cannot resolve value: The response has already been closed. Have you called resolve/reject twice?");
-                    done();
-                };
-
-                phantom.run(function (resolve) {
-                    resolve();
-                    resolve();
-                });
-            }));
-
-            it("should print an error if the request has already been reject", slow(function (done) {
-                fakeStderr.callback = function () {
-                    expect(fakeStderr.message).to.contain("Cannot reject value: The response has already been closed. Have you called resolve/reject twice?");
-                    done();
-                };
-
-                phantom.run(function (resolve, reject) {
-                    reject();
-                    reject();
-                });
-            }));
-
             it("should run all functions on the same empty context", function () {
-                return phantom.run(function (resolve, reject) {
+                return phantom.run(function () {
                     if (JSON.stringify(this) !== "{}") {
-                        return reject(new Error("The context is not an empty object"));
+                        throw new Error("The context is not an empty object");
                     }
                     this.message = "Hi from the first run";
-                    resolve();
                 }).then(function () {
-                    return phantom.run(function (resolve, reject) {
+                    return phantom.run(function () {
                         if (this.message !== "Hi from the first run") {
-                            return reject(new Error("The context is not persistent"));
+                            throw new Error("The context is not persistent");
                         }
-                        resolve();
                     });
                 });
             });
@@ -259,7 +307,7 @@ describe("Phantom", function () {
 
             it("should resolve when the given page has loaded", slow(function () {
                 return phantom.openPage(this.testServerUrl).then(function (page) {
-                    return page.run(function (resolve, reject) {
+                    return page.run(function () {
                         var headline,
                             imgIsLoaded;
 
@@ -273,20 +321,18 @@ describe("Phantom", function () {
                         });
 
                         if (headline !== "This is a test page") {
-                            return reject(new Error("Unexpected headline: " + headline));
+                            throw new Error("Unexpected headline: " + headline);
                         }
                         if (imgIsLoaded !== true) {
-                            return reject(new Error("The image has not loaded yet"));
+                            throw new Error("The image has not loaded yet");
                         }
-
-                        resolve();
                     });
                 });
             }));
 
         });
 
-        describe(".exit()", function () {
+        describe(".dispose()", function () {
 
             it("should terminate the child process with exit-code 0 and then resolve", slow(function () {
                 var exit = false;
@@ -296,22 +342,22 @@ describe("Phantom", function () {
                     exit = true;
                 });
 
-                return phantom.exit().then(function () {
+                return phantom.dispose().then(function () {
                     expect(exit).to.equal(true);
                 });
             }));
 
             it("should remove the instance from the instances array", slow(function () {
-                phantom.exit().then(function () {
+                phantom.dispose().then(function () {
                     expect(instances).to.not.contain(phantom);
                 });
             }));
 
-            it("should be save to call .exit() multiple times", slow(function () {
+            it("should be save to call .dispose() multiple times", slow(function () {
                 return when.all([
-                    phantom.exit(),
-                    phantom.exit(),
-                    phantom.exit()
+                    phantom.dispose(),
+                    phantom.dispose(),
+                    phantom.dispose()
                 ]);
             }));
 
