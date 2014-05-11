@@ -206,6 +206,28 @@ describe("Page", function () {
 
         });
 
+        describe(".dispose()", function () {
+
+            it("should remove the page from the pages-object", function () {
+                var pageId = page._id;
+
+                page.dispose();
+                phantom.run(function (params, resolve, reject) {
+                    if (pages[params.pageId]) {
+                        return reject(new Error("page is still present in the page-object"));
+                    }
+                    resolve();
+                }, { pageId: pageId });
+            });
+
+            it("should remove the phantom reference", function () {
+                return page.dispose().then(function () {
+                    expect(page.phantom).to.equal(null);
+                });
+            });
+
+        });
+
     });
 
 });
