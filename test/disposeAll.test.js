@@ -14,7 +14,7 @@ chai.use(chaiAsPromised);
 describe("disposeAll()", function () {
 
     it("should exit cleanly all running phantomjs instances", slow(function () {
-        var exitted = [];
+        var exited = [];
 
         return when.all([
                 phridge.create(),
@@ -22,15 +22,15 @@ describe("disposeAll()", function () {
                 phridge.create()
             ])
             .then(function (p) {
-                p[0].childProcess.on("exit", function () { exitted.push(0); });
-                p[1].childProcess.on("exit", function () { exitted.push(1); });
-                p[2].childProcess.on("exit", function () { exitted.push(2); });
+                p[0].childProcess.on("exit", function () { exited.push(0); });
+                p[1].childProcess.on("exit", function () { exited.push(1); });
+                p[2].childProcess.on("exit", function () { exited.push(2); });
 
                 return phridge.disposeAll();
             })
             .then(function () {
-                exitted.sort();
-                expect(exitted).to.eql([0, 1, 2]);
+                exited.sort();
+                expect(exited).to.eql([0, 1, 2]);
             });
     }));
 

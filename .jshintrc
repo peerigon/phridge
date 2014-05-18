@@ -9,7 +9,6 @@
         "after",
         "beforeEach",
         "afterEach",
-        "server",
         "phantom"
     ],
 

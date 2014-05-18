@@ -26,7 +26,7 @@ describe("Phantom", function () {
         exitPhantom;
 
     createPhantom = slow(function () {
-        if (phantom && phantom.exitted === false) {
+        if (phantom && phantom.exited === false) {
             return;
         }
         phridge.config.stderr = fakeStderr;
