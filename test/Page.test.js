@@ -3,12 +3,13 @@
 var chai = require("chai"),
     when = require("when"),
     Page = require("../lib/Page.js"),
-    sinon = require("sinon"),
     expect = chai.expect,
     phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js"),
     createWritableMock = require("./helpers/createWritableMock.js");
+
+function noop() {}
 
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
@@ -126,7 +127,7 @@ describe("Page", function () {
                     page.run(function (resolve, reject) {
                         reject();
                         reject();
-                    });
+                    }).catch(noop);
                 }));
 
             });

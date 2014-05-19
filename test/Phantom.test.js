@@ -14,6 +14,8 @@ var chai = require("chai"),
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
 
+function noop() {}
+
 describe("Phantom", function () {
     var fakeStderr = createWritableMock(),
         phantom,
@@ -163,7 +165,7 @@ describe("Phantom", function () {
                     phantom.run(function (resolve, reject) {
                         reject();
                         reject();
-                    });
+                    }).catch(noop);
                 }));
 
             });
