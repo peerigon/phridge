@@ -4,7 +4,8 @@
   "description": "A bridge between node and phantomjs",
   "main": "./lib/main.js",
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha -R spec"
+    "test": "node node_modules/mocha/bin/mocha -R spec",
+    "coverage": "istanbul cover -x lib/phantom/* ./node_modules/mocha/bin/_mocha"
   },
   "keywords": [
     "phantom",

@@ -46,4 +46,12 @@ describe("findPort()", function () {
         expect(getportSpy.firstCall.args[1]).to.equal(30000);
     });
 
+    it("should throw an error if minPort is equal or greater than the maxPort", function () {
+        phridge.config.minPort = 30000;
+        expect(findPort()).to.be.rejectedWith("Invalid configuration: config.minPort must be lower than config.maxPort");
+        phridge.config.minPort = 30001;
+        expect(findPort()).to.be.rejectedWith("Invalid configuration: config.minPort must be lower than config.maxPort");
+        phridge.config.minPort = 2000;
+    });
+
 });

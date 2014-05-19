@@ -26,9 +26,13 @@ describe("Page", function () {
             page = phantom.createPage();
         }
 
+        function disposePage() {
+            page.dispose();
+        }
+
         before(slow(function () {
             phridge.config.stderr = fakeStderr;
-            return phridge.create({ }).then(function (newPhantom) {
+            return phridge.create({}).then(function (newPhantom) {
                 phantom = newPhantom;
             });
         }));
@@ -59,7 +63,8 @@ describe("Page", function () {
 
         describe(".run(arg1, arg2, arg3, fn)", function () {
 
-            beforeEach(createPage);
+            before(createPage);
+            after(disposePage);
 
             describe("with fn being an asynchronous function", function () {
 
@@ -256,15 +261,19 @@ describe("Page", function () {
 
         describe(".dispose()", function () {
 
+            beforeEach(createPage);
+
             it("should remove the page from the pages-object", function () {
                 var pageId = page._id;
 
-                page.dispose();
-                phantom.run(pageId, function (pageId, resolve, reject) {
+                function checkForPage(pageId) {
                     if (pages[pageId]) {
-                        return reject(new Error("page is still present in the page-object"));
+                        throw new Error("page is still present in the page-object");
                     }
-                    resolve();
+                }
+
+                return page.dispose().then(function () {
+                    return phantom.run(pageId, checkForPage);
                 });
             });
 

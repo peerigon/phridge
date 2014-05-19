@@ -11,7 +11,8 @@ pids
 logs
 results
 
-examples
-node_modules
 npm-debug.log
+node_modules
+coverage
+examples
 .idea

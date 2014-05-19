@@ -11,9 +11,9 @@ function createWritableMock() {
         chunk = chunk.toString();
         writable.message += chunk;
         writable.messageArr.push(chunk);
-        setImmediate(callback);
+        callback();
         if (writable.callback) {
-            setImmediate(writable.callback);
+            writable.callback();
         }
     };
 

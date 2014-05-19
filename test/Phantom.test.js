@@ -52,6 +52,8 @@ describe("Phantom", function () {
             after(function () {
                 // Null out phantom so createPhantom() will create a fresh one
                 phantom = null;
+                // Remove mocked Phantom instances from the instances-array
+                instances.length = 0;
             });
 
             it("should return an instance of Phantom", function () {
@@ -358,12 +360,14 @@ describe("Phantom", function () {
 
                 return phantom.dispose().then(function () {
                     expect(exit).to.equal(true);
+                    phantom = null;
                 });
             }));
 
             it("should remove the instance from the instances array", slow(function () {
-                phantom.dispose().then(function () {
+                return phantom.dispose().then(function () {
                     expect(instances).to.not.contain(phantom);
+                    phantom = null;
                 });
             }));
 
