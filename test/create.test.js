@@ -19,7 +19,7 @@ chai.use(require("chai-as-promised"));
 
 getport = node.lift(getport);
 
-describe.skip("create(config?)", function () {
+describe("create(config?)", function () {
 
     after(slow(function () {
         return phridge.disposeAll();
