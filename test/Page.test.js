@@ -32,7 +32,7 @@ describe("Page", function () {
 
         before(slow(function () {
             phridge.config.stderr = fakeStderr;
-            return phridge.create({}).then(function (newPhantom) {
+            return phridge.spawn({}).then(function (newPhantom) {
                 phantom = newPhantom;
             });
         }));

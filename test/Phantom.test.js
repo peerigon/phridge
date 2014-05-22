@@ -24,15 +24,15 @@ describe("Phantom", function () {
         },
         port = 3000,
         secret = "super secret",
-        createPhantom,
+        spawnPhantom,
         exitPhantom;
 
-    createPhantom = slow(function () {
+    spawnPhantom = slow(function () {
         if (phantom && phantom.childProcess) {
             return;
         }
         phridge.config.stderr = fakeStderr;
-        return phridge.create().then(function (newPhantom) {
+        return phridge.spawn().then(function (newPhantom) {
             phantom = newPhantom;
         });
     });
@@ -50,7 +50,7 @@ describe("Phantom", function () {
         describe(".constructor(childProcess, port, secret)", function () {
 
             after(function () {
-                // Null out phantom so createPhantom() will create a fresh one
+                // Null out phantom so spawnPhantom() will spawn a fresh one
                 phantom = null;
                 // Remove mocked Phantom instances from the instances-array
                 instances.length = 0;
@@ -76,7 +76,7 @@ describe("Phantom", function () {
 
         describe(".childProcess", function () {
 
-            beforeEach(createPhantom);
+            beforeEach(spawnPhantom);
 
             it("should provide a reference on the child process object created by node", function () {
                 expect(phantom.childProcess).to.be.an("object");
@@ -89,7 +89,7 @@ describe("Phantom", function () {
 
         describe(".port", function () {
 
-            beforeEach(createPhantom);
+            beforeEach(spawnPhantom);
 
             it("should be a number", function () {
                 expect(phantom.port).to.be.a("number");
@@ -99,7 +99,7 @@ describe("Phantom", function () {
 
         describe(".run(arg1, arg2, arg3, fn)", function () {
 
-            beforeEach(createPhantom);
+            beforeEach(spawnPhantom);
 
             describe("with fn being an asynchronous function", function () {
 
@@ -303,7 +303,7 @@ describe("Phantom", function () {
 
         describe(".createPage()", function () {
 
-            beforeEach(createPhantom);
+            beforeEach(spawnPhantom);
 
             it("should return an instance of Page", function () {
                 expect(phantom.createPage()).to.be.an.instanceof(Page);
@@ -313,7 +313,7 @@ describe("Phantom", function () {
 
         describe(".openPage(url)", function () {
 
-            beforeEach(createPhantom);
+            beforeEach(spawnPhantom);
 
             it("should resolve to an instance of Page", function () {
                 return expect(phantom.openPage(this.testServerUrl)).to.eventually.be.an.instanceof(Page);
@@ -348,7 +348,7 @@ describe("Phantom", function () {
 
         describe(".dispose()", function () {
 
-            beforeEach(createPhantom);
+            beforeEach(spawnPhantom);
 
             it("should terminate the child process with exit-code 0 and then resolve", slow(function () {
                 var exit = false;

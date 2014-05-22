@@ -17,9 +17,9 @@ describe("disposeAll()", function () {
         var exited = [];
 
         return when.all([
-                phridge.create(),
-                phridge.create(),
-                phridge.create()
+                phridge.spawn(),
+                phridge.spawn(),
+                phridge.spawn()
             ])
             .then(function (p) {
                 p[0].childProcess.on("exit", function () { exited.push(0); });

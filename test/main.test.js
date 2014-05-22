@@ -3,7 +3,7 @@
 var chai = require("chai"),
     expect = chai.expect,
     config = require("../lib/config"),
-    create = require("../lib/create"),
+    spawn = require("../lib/spawn"),
     disposeAll = require("../lib/disposeAll"),
     phridge = require("../lib/main.js");
 
@@ -19,10 +19,10 @@ describe("phridge", function () {
 
     });
 
-    describe(".create", function () {
+    describe(".spawn", function () {
 
-        it("should be the create-module", function () {
-            expect(phridge.create).to.equal(create);
+        it("should be the spawn-module", function () {
+            expect(phridge.spawn).to.equal(spawn);
         });
 
     });

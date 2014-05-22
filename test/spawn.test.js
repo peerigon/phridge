@@ -7,7 +7,7 @@ var chai = require("chai"),
     getport = require("getport"),
     net = require("net"),
     expect = chai.expect,
-    create = rewire("../lib/create.js"),
+    spawn = rewire("../lib/spawn.js"),
     phridge = require("../lib/main.js"),
     Phantom = require("../lib/Phantom.js"),
     slow = require("./helpers/slow.js"),
@@ -19,14 +19,14 @@ chai.use(require("chai-as-promised"));
 
 getport = node.lift(getport);
 
-describe("create(config?)", function () {
+describe("spawn(config?)", function () {
 
     after(slow(function () {
         return phridge.disposeAll();
     }));
 
     it("should resolve to an instance of Phantom", slow(function () {
-        return expect(create()).to.eventually.be.an.instanceOf(Phantom);
+        return expect(spawn()).to.eventually.be.an.instanceOf(Phantom);
     }));
 
     it("should pass the provided config to phantomjs", slow(function () {
@@ -43,7 +43,7 @@ describe("create(config?)", function () {
                 server.listen(port);
 
                 phridge.config.stdout = fakeStdout;
-                phridge.create({
+                phridge.spawn({
                     webdriver: "localhost:" + port
                 });
                 phridge.config.stdout = process.stdout;
@@ -63,7 +63,7 @@ describe("create(config?)", function () {
     it("should share a secret with the phantomjs process so no untrusted code can be executed", slow(function () {
         var evilCode = "resolve('harharhar')";
 
-        return expect(create()
+        return expect(spawn()
             .then(function (phantom) {
                 return request({
                     port: phantom.port,
