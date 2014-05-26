@@ -13,24 +13,36 @@ Working with PhantomJS in node is a bit cumbersome since you need to spawn a new
 
 **phridge** communicates with PhantomJS using its built-in http server. It stringifies the given function, sends it to PhantomJS and executes it there again. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
 
-Take a look at this example:
+Instead of ...
 
 ```javascript
-var phridge = require("phridge");
-
-phridge.spawn()
-    .then(function (phantom) {
-        return phantom.openPage("http://example.com");
-    })
-    .then(function (page) {
-        return page.run(function () {
-            // this function runs inside PhantomJS with `this` bound to webpage object
-            return this.title;
+phantom.create(function (ph) {
+    ph.createPage(function (page) {
+        page.open("http://www.google.com", function (status) {
+            page.evaluate(function () { return document.title; }, function (result) {
+                console.log('Page title is ' + result);
+                ph.exit();
+            });
         });
-    })
-    .then(function (title) {
-        console.log("The title is " + title);
     });
+});
+```
+
+... you can write ..
+
+```javscript
+// inside node
+phantom.run(function (resolve) {
+    // inside phantom
+    webpage.create().open("http://www.google.com", function () {
+        resolve(page.evaluate(function () {
+            return document.title
+        }));
+    });
+}).then(function (title) {
+    // inside node again
+    console.log('Page title is ' + title);
+});
 ```
 
 Since communication via http is asynchronous **phridge** always returns promises. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favourite promise library should be no problem.
@@ -249,7 +261,7 @@ will terminate all processes.
 <a name="a-note-on-security"></a>A note on security
 ------------------------------------------------------------------------
 
-**phridge** spins up an http server inside PhantomJS which executes any JavaScript code it receives. Thus attackers could easily read the filesystem if the port is accessible for untrusted users. That's why **phridge** shares a secret with the child process which needs to be present in a request in order to execute code. The secret is stored in a temporary file at `os.tmpDir()` and removed right after the config has been loaded into memory.
+**phridge** spins up an http server inside PhantomJS which executes any JavaScript code it receives. Thus attackers could easily read the filesystem if the port is accessible for untrusted users. That's why **phridge** shares a secret with the child process which needs to be present in a request in order to execute code. The secret is stored in a temporary file at [`os.tmpdir()`](http://nodejs.org/api/os.html#os_os_tmpdir) and removed right after the config has been loaded into memory.
 
 Needless to say that your production server shouldn't expose arbitrary ports anyway.
 
