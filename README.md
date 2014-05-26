@@ -11,18 +11,29 @@ Working with PhantomJS in node is a bit cumbersome since you need to spawn a new
 - return results from PhantomJS to node
 - manage long-running PhantomJS instances
 
-**phridge** communicates with PhantomJS using its built-in http server. It stringifies the given function, sends it to PhantomJS and executes it there again. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
+Unlike other node-PhantomJS bridges **phridge** provides a way to run code directly inside PhantomJS instead of turning every call and assignment into an async operation.
+
+**phridge** utilizes PhantomJS' built-in http server for [inter-process communication](http://en.wikipedia.org/wiki/Inter-process_communication). It stringifies the given function, sends it to PhantomJS and executes it there. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
 
 Instead of ...
 
 ```javascript
-phantom.create(function (ph) {
-    ph.createPage(function (page) {
-        page.open("http://www.google.com", function (status) {
-            page.evaluate(function () { return document.title; }, function (result) {
-                console.log('Page title is ' + result);
-                ph.exit();
-            });
+phantom.addCookie("cookie_name", "cookie_value", "localhost", function () {
+    phantom.createPage(function () (page) {
+        page.set("customHeaders.Referer", "http://google.com", function () {
+            page.set(
+                "settings.userAgent",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.89 Safari/537.1",
+                function () {
+                    page.open("http://localhost:9901/cookie", function (status) {
+                        page.evaluate(function (selector) {
+                            return document.querySelector(selector).innerText;
+                        }, function (text) {
+                            console.log("The element contains the following text: "+ text)
+                        }, "h1");
+                    });
+                }
+            );
         });
     });
 });
@@ -30,22 +41,36 @@ phantom.create(function (ph) {
 
 ... you can write ..
 
-```javscript
-// inside node
-phantom.run(function (resolve) {
-    // inside phantom
-    webpage.create().open("http://www.google.com", function () {
-        resolve(page.evaluate(function () {
-            return document.title
-        }));
+```javascript
+// node
+phantom.run("h1", function (selector, resolve) {
+    // this code runs inside PhantomJS
+
+    phantom.addCookie("cookie_name", "cookie_value", "localhost");
+
+    var page = webpage.create();
+    page.customHeaders = {
+        Referer: "http://google.com"
+    };
+    page.settings = {
+        userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.1 (KHTML, like Gecko)"
+    };
+    page.open("http://www.google.com", function () {
+        var text = page.evaluate(function (selector) {
+            return document.querySelector(selector).innerText;
+        }, selector);
+
+        resolve(text);
     });
 }).then(function (title) {
     // inside node again
-    console.log('Page title is ' + title);
+    console.log("Page title is " + title);
 });
 ```
 
-Since communication via http is asynchronous **phridge** always returns promises. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favourite promise library should be no problem.
+Please note that the `phantom`-object provided by **phridge** is completely different to the `phantom`-object inside PhantomJS. So is the `page`-object. [Check out the api](#api-phantom) for further information.
+
+Since communication via http is asynchronous **phridge** always returns promises. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favorite promise library should be no problem.
 
 <br />
 
@@ -254,7 +279,7 @@ phridge.disposeAll().then(function () {
 
 will terminate all processes.
 
-**I strongly recommend to call** `phridge.disposeAll()` **when the node process exits as this is the only way to ensure that all child processes terminate as well.** Since `disposeAll()` is async it is not safe to call it on `process.on("exit")`. It is better to call it on `SIGINT` or `SIGTERM` or to hook into your regular exit flow.
+**I strongly recommend to call** `phridge.disposeAll()` **when the node process exits as this is the only way to ensure that all child processes terminate as well.** Since `disposeAll()` is async it is not safe to call it on `process.on("exit")`. It is better to call it on `SIGINT` and `SIGTERM` or to hook into your regular exit flow.
 
 <br />
 
@@ -263,7 +288,7 @@ will terminate all processes.
 
 **phridge** spins up an http server inside PhantomJS which executes any JavaScript code it receives. Thus attackers could easily read the filesystem if the port is accessible for untrusted users. That's why **phridge** shares a secret with the child process which needs to be present in a request in order to execute code. The secret is stored in a temporary file at [`os.tmpdir()`](http://nodejs.org/api/os.html#os_os_tmpdir) and removed right after the config has been loaded into memory.
 
-Needless to say that your production server shouldn't expose arbitrary ports anyway.
+That's all just security on top. Needless to say that your production server shouldn't expose arbitrary ports anyway.
 
 <br />
 
@@ -297,7 +322,7 @@ Destination stream where PhantomJS' stderr will be piped to. Set it `null` if yo
 
 ----
 
-### Phantom (instance)
+### <a name="api-phantom"></a>Phantom (instance)
 
 ### .childProcess: ChildProcess
 
@@ -348,7 +373,7 @@ Cleans up all page references inside PhantomJS.
 Contributing
 ------------------------------------------------------------------------
 
-From opening a bug report to creating a pull-request: **every contribution is appreciated and welcome**. If you're planing to implement a new feature or change the api please create an issue first. This way we can ensure that your precious work is not in vain.
+From opening a bug report to creating a pull request: **every contribution is appreciated and welcome**. If you're planing to implement a new feature or change the api please create an issue first. This way we can ensure that your precious work is not in vain.
 
 All pull-requests should have 100% test coverage (with notable exceptions) and need to pass all tests.
 
