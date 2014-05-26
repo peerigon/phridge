@@ -251,6 +251,8 @@ will terminate all processes.
 
 **phridge** spins up an http server inside PhantomJS which executes any JavaScript code it receives. Thus attackers could easily read the filesystem if the port is accessible for untrusted users. That's why **phridge** shares a secret with the child process which needs to be present in a request in order to execute code. The secret is stored in a temporary file at `os.tmpDir()` and removed right after the config has been loaded into memory.
 
+Needless to say that your production server shouldn't expose arbitrary ports anyway.
+
 <br />
 
 API
