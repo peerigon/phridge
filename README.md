@@ -23,7 +23,7 @@ phantom.addCookie("cookie_name", "cookie_value", "localhost", function () {
         page.set("customHeaders.Referer", "http://google.com", function () {
             page.set(
                 "settings.userAgent",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.89 Safari/537.1",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5)",
                 function () {
                     page.open("http://localhost:9901/cookie", function (status) {
                         page.evaluate(function (selector) {
@@ -53,7 +53,7 @@ phantom.run("h1", function (selector, resolve) {
         Referer: "http://google.com"
     };
     page.settings = {
-        userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.1 (KHTML, like Gecko)"
+        userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5)"
     };
     page.open("http://www.google.com", function () {
         var text = page.evaluate(function (selector) {
