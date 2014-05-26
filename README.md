@@ -60,11 +60,12 @@ phantom.run("h1", function (selector, resolve) {
             return document.querySelector(selector).innerText;
         }, selector);
 
+        // resolve the promise and pass 'text' back to node 
         resolve(text);
     });
-}).then(function (title) {
+}).then(function (text) {
     // inside node again
-    console.log("Page title is " + title);
+    console.log("The element contains the following text: "+ text);
 });
 ```
 
