@@ -210,7 +210,7 @@ phantom.run(function () {
 });
 ```
 
-For further convenience all PhantomJS modules are already available in the gobal scope.
+For further convenience all PhantomJS modules are already available in the global scope.
 
 ```javascript
 phantom.run(function () {
@@ -233,7 +233,7 @@ page.run(function (resolve) {
     // `this` is now a webpage instance
     this.open("http://example.com", function (status) {
         if (status !== "success") {
-            return reject(new Error("Cannot load " + url + "));
+            return reject(new Error("Cannot load " + url));
         }
         resolve();
     });
