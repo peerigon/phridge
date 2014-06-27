@@ -5,20 +5,20 @@ var phridge = require("../lib/main.js"); // should just be require("phridge") in
 // phridge.spawn() creates a new PhantomJS process
 phridge.spawn()
 
-    // phantom.openPage(url) loads a page with the given url
     .then(function (phantom) {
+        // phantom.openPage(url) loads a page with the given url
         return phantom.openPage("http://example.com");
     })
 
-    // page.run(fn) runs fn inside PhantomJS with 'this' bound to an instance of PhantomJS' WebPage.
     .then(function (page) {
+        // page.run(fn) runs fn inside PhantomJS
         return page.run(function () {
+            // Here we're inside PhantomJS, so we can't reference variables in the scope
 
             // 'this' is an instance of PhantomJS' WebPage as returned by require("webpage").create()
             return this.evaluate(function () {
                 return document.querySelector("h1").innerText;
             });
-
         });
     })
 
