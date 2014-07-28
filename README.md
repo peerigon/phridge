@@ -13,7 +13,7 @@ Working with PhantomJS in node is a bit cumbersome since you need to spawn a new
 
 Unlike other node-PhantomJS bridges **phridge** provides a way to run code directly inside PhantomJS instead of turning every call and assignment into an async operation.
 
-**phridge** utilizes PhantomJS' built-in http server for [inter-process communication](http://en.wikipedia.org/wiki/Inter-process_communication). It stringifies the given function, sends it to PhantomJS and executes it there. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
+**phridge** uses PhantomJS' stdin and stdout for [inter-process communication](http://en.wikipedia.org/wiki/Inter-process_communication). It stringifies the given function, passes it to PhantomJS via stdin, executes it there and passes back the results via stdout. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
 
 Instead of ...
 
@@ -284,15 +284,6 @@ will terminate all processes.
 
 <br />
 
-<a name="a-note-on-security"></a>A note on security
-------------------------------------------------------------------------
-
-**phridge** spins up an http server inside PhantomJS which executes any JavaScript code it receives. Thus attackers could easily read the filesystem if the port is accessible for untrusted users. That's why **phridge** shares a secret with the child process which needs to be present in a request in order to execute code. The secret is stored in a temporary file at [`os.tmpdir()`](http://nodejs.org/api/os.html#os_os_tmpdir) and removed right after the config has been loaded into memory.
-
-That's all just security on top. Needless to say that your production server shouldn't expose arbitrary ports anyway.
-
-<br />
-
 API
 ------------------------------------------------------------------------
 ### phridge
@@ -328,14 +319,6 @@ Destination stream where PhantomJS' stderr will be piped to. Set it `null` if yo
 ### .childProcess: ChildProcess
 
 A reference to node's [ChildProcess](http://nodejs.org/api/child_process.html#child_process_class_childprocess).
-
-### .port: Number
-
-Actual port the process listens for http requests.
-
-### .secret: String
-
-The shared secret between node and PhantomJS. See also [A note on security](#a-note-on-security).
 
 ### <a name="phantom-run"></a>.run(args..., fn): Promise → *
 

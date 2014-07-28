@@ -1,15 +1,15 @@
 "use strict";
 
-var chai = require("chai"),
-    when = require("when"),
-    expect = chai.expect,
-    phridge = require("../lib/main.js"),
-    Phantom = require("../lib/Phantom.js"),
-    Page = require("../lib/Page.js"),
-    instances = require("../lib/instances.js"),
-    slow = require("./helpers/slow.js"),
-    createWritableMock = require("./helpers/createWritableMock.js"),
-    testServer = require("./helpers/testServer.js");
+var chai = require("chai");
+var when = require("when");
+var childProcess = require("child_process");
+var expect = chai.expect;
+var phridge = require("../lib/main.js");
+var Phantom = require("../lib/Phantom.js");
+var Page = require("../lib/Page.js");
+var instances = require("../lib/instances.js");
+var slow = require("./helpers/slow.js");
+var testServer = require("./helpers/testServer.js");
 
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
@@ -17,27 +17,33 @@ chai.use(require("chai-as-promised"));
 function noop() {}
 
 describe("Phantom", function () {
-    var fakeStderr = createWritableMock(),
-        phantom,
-        childProcess = {
-            on: function () {}
+    var childProcessMock = {
+        on: noop,
+        phridge: {
+            on: noop
         },
-        port = 3000,
-        secret = "super secret",
-        spawnPhantom,
-        exitPhantom;
+        stdin: {
+            write: noop
+        }
+    };
+    var phantom;
+    var spawnPhantom;
+    var exitPhantom;
 
     spawnPhantom = slow(function () {
         if (phantom && phantom.childProcess) {
             return;
         }
-        phridge.config.stderr = fakeStderr;
-        return phridge.spawn().then(function (newPhantom) {
-            phantom = newPhantom;
-        });
+        return phridge.spawn({ someConfig: true })
+            .then(function (newPhantom) {
+                phantom = newPhantom;
+            });
     });
     exitPhantom = slow(function () {
-        phridge.config.stderr = process.stderr;
+        if (!phantom) {
+            return;
+        }
+
         return phantom.dispose();
     });
 
@@ -50,6 +56,7 @@ describe("Phantom", function () {
         describe(".constructor(childProcess, port, secret)", function () {
 
             after(function () {
+                exitPhantom.call(this);
                 // Null out phantom so spawnPhantom() will spawn a fresh one
                 phantom = null;
                 // Remove mocked Phantom instances from the instances-array
@@ -57,15 +64,13 @@ describe("Phantom", function () {
             });
 
             it("should return an instance of Phantom", function () {
-                phantom = new Phantom(childProcess, port, secret);
+                phantom = new Phantom(childProcessMock);
                 expect(phantom).to.be.an.instanceof(Phantom);
             });
 
-            it("should set the childProcess, port and secret accordingly", function () {
-                phantom = new Phantom(childProcess, port, secret);
-                expect(phantom.childProcess).to.equal(childProcess);
-                expect(phantom.port).to.equal(port);
-                expect(phantom.secret).to.equal(secret);
+            it("should set the childProcess", function () {
+                phantom = new Phantom(childProcessMock);
+                expect(phantom.childProcess).to.equal(childProcessMock);
             });
 
             it("should add the instance to the instances array", function () {
@@ -83,16 +88,6 @@ describe("Phantom", function () {
                 expect(phantom.childProcess.stdin).to.be.an("object");
                 expect(phantom.childProcess.stdout).to.be.an("object");
                 expect(phantom.childProcess.stderr).to.be.an("object");
-            });
-
-        });
-
-        describe(".port", function () {
-
-            beforeEach(spawnPhantom);
-
-            it("should be a number", function () {
-                expect(phantom.port).to.be.a("number");
             });
 
         });
@@ -146,28 +141,24 @@ describe("Phantom", function () {
                     });
                 });
 
-                it("should print an error if the request has already been resolved", slow(function (done) {
-                    fakeStderr.callback = function () {
-                        expect(fakeStderr.message).to.contain("Cannot resolve value: The response has already been closed. Have you called resolve/reject twice?");
-                        done();
-                    };
+                it("should print an error when resolve is called and the request has already been finished", slow(function (done) {
+                    var execPath = '"' + process.execPath + '" ';
 
-                    phantom.run(function (resolve) {
-                        resolve();
-                        resolve();
+                    childProcess.exec(execPath + require.resolve("./cases/callResolveTwice"), function (error, stdout, stderr) {
+                        expect(error).to.be.null;
+                        expect(stderr).to.contain("Cannot call resolve() after the promise has already been resolved or rejected");
+                        done();
                     });
                 }));
 
-                it("should print an error if the request has already been rejected", slow(function (done) {
-                    fakeStderr.callback = function () {
-                        expect(fakeStderr.message).to.contain("Cannot reject value: The response has already been closed. Have you called resolve/reject twice?");
-                        done();
-                    };
+                it("should print an error when reject is called and the request has already been finished", slow(function (done) {
+                    var execPath = '"' + process.execPath + '" ';
 
-                    phantom.run(function (resolve, reject) {
-                        reject();
-                        reject();
-                    }).catch(noop);
+                    childProcess.exec(execPath + require.resolve("./cases/callRejectTwice"), function (error, stdout, stderr) {
+                        expect(error).to.be.null;
+                        expect(stderr).to.contain("Cannot call reject() after the promise has already been resolved or rejected");
+                        done();
+                    });
                 }));
 
             });
@@ -243,10 +234,7 @@ describe("Phantom", function () {
                 return expect(phantom.run(function () {
                     return config;
                 })).to.eventually.deep.equal({
-                    phridge: {
-                        port: phantom.port,
-                        secret: phantom.secret
-                    }
+                    someConfig: true
                 });
             });
 
@@ -315,15 +303,15 @@ describe("Phantom", function () {
 
             beforeEach(spawnPhantom);
 
-            it("should resolve to an instance of Page", function () {
+            it("should resolve to an instance of Page", slow(function () {
                 return expect(phantom.openPage(this.testServerUrl)).to.eventually.be.an.instanceof(Page);
-            });
+            }));
 
             it("should resolve when the given page has loaded", slow(function () {
                 return phantom.openPage(this.testServerUrl).then(function (page) {
                     return page.run(function () {
-                        var headline,
-                            imgIsLoaded;
+                        var headline;
+                        var imgIsLoaded;
 
                         headline = this.evaluate(function () {
                             /* jshint browser:true */
@@ -342,6 +330,13 @@ describe("Phantom", function () {
                         }
                     });
                 });
+            }));
+
+            it("should reject when the page is not available", slow(function () {
+                return expect(
+                    // localhost:1 should fail fast because it doesn't require a DNS lookup
+                    phantom.openPage("http://localhost:1")
+                ).to.be.rejectedWith("Cannot load http://localhost:1: Phantomjs returned status fail");
             }));
 
         });

@@ -1,11 +1,11 @@
 "use strict";
 
-var chai = require("chai"),
-    expect = chai.expect,
-    config = require("../lib/config"),
-    spawn = require("../lib/spawn"),
-    disposeAll = require("../lib/disposeAll"),
-    phridge = require("../lib/main.js");
+var chai = require("chai");
+var expect = chai.expect;
+var config = require("../lib/config");
+var spawn = require("../lib/spawn");
+var disposeAll = require("../lib/disposeAll");
+var phridge = require("../lib/main.js");
 
 chai.config.includeStack = true;
 

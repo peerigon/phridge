@@ -18,18 +18,18 @@
     "forever"
   ],
   "dependencies": {
-    "getport": "0.1.x",
-    "phantomjs": "1.x",
+    "fork-stream": "^0.0.4",
+    "linerstream": "git://github.com/jhnns/linerstream.git#fix/on-windows",
+    "phantomjs": "^1.9.7-15",
     "temp": "^0.8.0",
-    "when": "3.2.3"
+    "when": "^3.4.2"
   },
   "devDependencies": {
-    "mocha": "1.x",
-    "chai": "1.x",
-    "chai-as-promised": "4.x",
-    "sinon-chai": "2.x",
-    "sinon": "1.x",
-    "rewire": "2.x"
+    "chai": "^1.9.1",
+    "chai-as-promised": "^4.1.1",
+    "getport": "^0.1.0",
+    "istanbul": "^0.3.0",
+    "mocha": "^1.21.3"
   },
   "repository": {
     "type": "git",
