@@ -2,7 +2,11 @@ phridge
 ========================================================================
 **A bridge between [node](http://nodejs.org/) and [PhantomJS](http://phantomjs.org/).**
 
-Working with PhantomJS in node is a bit cumbersome since you need to spawn a new PhantomJS process for every single task. However, spawning a new process is quite expensive (~1s) and thus can slow down your application significantly.
+[![Build Status](https://travis-ci.org/peerigon/phridge.svg?branch=master)](https://travis-ci.org/peerigon/phridge)
+[![Dependency Status](https://david-dm.org/peerigon/phridge.svg)](https://david-dm.org/peerigon/phridge)
+[![Coverage Status](https://img.shields.io/coveralls/peerigon/phridge.svg)](https://coveralls.io/r/peerigon/phridge?branch=master)
+
+Working with PhantomJS in node is a bit cumbersome since you need to spawn a new PhantomJS process for every single task. However, spawning a new process is quite expensive and thus can slow down your application significantly.
 
 **phridge** provides an api to easily
 
@@ -13,7 +17,7 @@ Working with PhantomJS in node is a bit cumbersome since you need to spawn a new
 
 Unlike other node-PhantomJS bridges **phridge** provides a way to run code directly inside PhantomJS instead of turning every call and assignment into an async operation.
 
-**phridge** uses PhantomJS' stdin and stdout for [inter-process communication](http://en.wikipedia.org/wiki/Inter-process_communication). It stringifies the given function, passes it to PhantomJS via stdin, executes it there and passes back the results via stdout. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
+**phridge** uses PhantomJS' stdin and stdout for [inter-process communication](http://en.wikipedia.org/wiki/Inter-process_communication). It stringifies the given function, passes it to PhantomJS via stdin, executes it in the PhantomJS environment and passes back the results via stdout. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
 
 Instead of ...
 
@@ -71,18 +75,14 @@ phantom.run("h1", function (selector, resolve) {
 
 Please note that the `phantom`-object provided by **phridge** is completely different to the `phantom`-object inside PhantomJS. So is the `page`-object. [Check out the api](#api-phantom) for further information.
 
-Since communication via http is asynchronous **phridge** always returns promises. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favorite promise library should be no problem.
+Since communication via stdin/stdout is always asynchronous **phridge** returns promises most of the time. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favorite promise library should be no problem.
 
 <br />
 
-Setup
+Installation
 ------------------------------------------------------------------------
 
 [![npm status](https://nodei.co/npm/phridge.png?downloads=true&stars=true)](https://npmjs.org/package/phridge)
-
-[![Build Status](https://travis-ci.org/peerigon/phridge.svg?branch=master)](https://travis-ci.org/peerigon/phridge)
-[![Dependency Status](https://david-dm.org/peerigon/phridge.svg)](https://david-dm.org/peerigon/phridge)
-[![Coverage Status](https://img.shields.io/coveralls/peerigon/phridge.svg)](https://coveralls.io/r/peerigon/phridge?branch=master)
 
 <br />
 
@@ -280,7 +280,7 @@ phridge.disposeAll().then(function () {
 
 will terminate all processes.
 
-**I strongly recommend to call** `phridge.disposeAll()` **when the node process exits as this is the only way to ensure that all child processes terminate as well.** Since `disposeAll()` is async it is not safe to call it on `process.on("exit")`. It is better to call it on `SIGINT` and `SIGTERM` or to hook into your regular exit flow.
+**I strongly recommend to call** `phridge.disposeAll()` **when the node process exits as this is the only way to ensure that all child processes terminate as well.** Since `disposeAll()` is async it is not safe to call it on `process.on("exit")`. It is better to call it on `SIGINT`, `SIGTERM` and within your regular exit flow.
 
 <br />
 
@@ -296,17 +296,9 @@ Spawns a new PhantomJS process with the given config. [Read the PhantomJS docume
 
 Terminates all PhantomJS processes that have been spawned. The promise will be fulfilled when all child processes emitted an `exit`-event.
 
-### .config.minPort: Number = 2000
-
-The minimum port where phridge will try to bind an http server.
-
-### .config.maxPort: Number = 65536
-
-The maximum port where phridge will try to bind an http server.
-
 ### .config.stdout: Stream = process.stdout
 
-Destination stream where PhantomJS' stdout will be piped to. Set it `null` if you don't want it. Changing the value does not affect processes that have already been spawned.
+Destination stream where PhantomJS' [clean stdout](#phantom-childprocess-cleanstdout) will be piped to. Set it `null` if you don't want it. Changing the value does not affect processes that have already been spawned.
 
 ### .config.stderr: Stream = process.stderr
 
@@ -318,7 +310,11 @@ Destination stream where PhantomJS' stderr will be piped to. Set it `null` if yo
 
 ### .childProcess: ChildProcess
 
-A reference to node's [ChildProcess](http://nodejs.org/api/child_process.html#child_process_class_childprocess).
+A reference to the [ChildProcess](http://nodejs.org/api/child_process.html#child_process_class_childprocess)-instance.
+
+### <a name="phantom-childprocess-cleanstdout"></a> .childProcess.cleanStdout: ReadableStream
+
+phridge extends the [ChildProcess](http://nodejs.org/api/child_process.html#child_process_class_childprocess)-instance by a new stream called `cleanStdout`. This stream is piped to `process.stdout` by default. It provides all data not dedicated to phridge. Streaming data is considered to be dedicated to phridge when the new line is preceded by the classifier string `"message to node: "`.
 
 ### <a name="phantom-run"></a>.run(args..., fn): Promise → *
 
@@ -342,7 +338,7 @@ Calls `phantom.exit(0)` inside PhantomJS and resolves when the child process emi
 
 ### .phantom: Phantom
 
-A reference to the parent phantom instance.
+A reference to the parent [`Phantom`](#api-phantom) instance.
 
 ### .run(args..., fn): Promise → *
 
