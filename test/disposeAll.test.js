@@ -1,12 +1,12 @@
 "use strict";
 
-var chai = require("chai"),
-    when = require("when"),
-    chaiAsPromised = require("chai-as-promised"),
-    expect = chai.expect,
-    phridge = require("../lib/main.js"),
-    Phantom = require("../lib/Phantom.js"),
-    slow = require("./helpers/slow.js");
+var chai = require("chai");
+var when = require("when");
+var chaiAsPromised = require("chai-as-promised");
+var expect = chai.expect;
+var phridge = require("../lib/main.js");
+var Phantom = require("../lib/Phantom.js");
+var slow = require("./helpers/slow.js");
 
 chai.config.includeStack = true;
 chai.use(chaiAsPromised);

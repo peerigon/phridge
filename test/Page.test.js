@@ -1,26 +1,21 @@
 "use strict";
 
-var chai = require("chai"),
-    when = require("when"),
-    Page = require("../lib/Page.js"),
-    expect = chai.expect,
-    phridge = require("../lib/main.js"),
-    Phantom = require("../lib/Phantom.js"),
-    slow = require("./helpers/slow.js"),
-    createWritableMock = require("./helpers/createWritableMock.js");
-
-function noop() {}
+var chai = require("chai");
+var when = require("when");
+var Page = require("../lib/Page.js");
+var expect = chai.expect;
+var phridge = require("../lib/main.js");
+var Phantom = require("../lib/Phantom.js");
+var slow = require("./helpers/slow.js");
 
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
-chai.use(require("sinon-chai"));
 
 describe("Page", function () {
 
     describe(".prototype", function () {
-        var fakeStderr = createWritableMock(),
-            phantom,
-            page;
+        var phantom;
+        var page;
 
         function createPage() {
             page = phantom.createPage();
@@ -31,14 +26,12 @@ describe("Page", function () {
         }
 
         before(slow(function () {
-            phridge.config.stderr = fakeStderr;
             return phridge.spawn({}).then(function (newPhantom) {
                 phantom = newPhantom;
             });
         }));
 
         after(slow(function () {
-            phridge.config.stderr = process.stderr;
             return phantom.dispose();
         }));
 
@@ -110,30 +103,6 @@ describe("Page", function () {
                         expect(err.message).to.equal("not ok");
                     });
                 });
-
-                it("should print an error if the request has already been resolved", slow(function (done) {
-                    fakeStderr.callback = function () {
-                        expect(fakeStderr.message).to.contain("Cannot resolve value: The response has already been closed. Have you called resolve/reject twice?");
-                        done();
-                    };
-
-                    page.run(function (resolve) {
-                        resolve();
-                        resolve();
-                    });
-                }));
-
-                it("should print an error if the request has already been rejected", slow(function (done) {
-                    fakeStderr.callback = function () {
-                        expect(fakeStderr.message).to.contain("Cannot reject value: The response has already been closed. Have you called resolve/reject twice?");
-                        done();
-                    };
-
-                    page.run(function (resolve, reject) {
-                        reject();
-                        reject();
-                    }).catch(noop);
-                }));
 
             });
 
@@ -207,12 +176,7 @@ describe("Page", function () {
             it("should provide the config object to store all kind of configuration", function () {
                 return expect(page.run(function () {
                     return config;
-                })).to.eventually.deep.equal({
-                    phridge: {
-                        port: phantom.port,
-                        secret: phantom.secret
-                    }
-                });
+                })).to.eventually.deep.equal({});
             });
 
             it("should provide the possibility to pass params", function () {

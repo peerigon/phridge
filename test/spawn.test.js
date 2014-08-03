@@ -1,18 +1,15 @@
 "use strict";
 
-var chai = require("chai"),
-    when = require("when"),
-    rewire = require("rewire"),
-    node = require("when/node"),
-    getport = require("getport"),
-    net = require("net"),
-    expect = chai.expect,
-    spawn = rewire("../lib/spawn.js"),
-    phridge = require("../lib/main.js"),
-    Phantom = require("../lib/Phantom.js"),
-    slow = require("./helpers/slow.js"),
-    request = require("../lib/request.js"),
-    createWritableMock = require("./helpers/createWritableMock.js");
+var chai = require("chai");
+var when = require("when");
+var node = require("when/node");
+var getport = require("getport");
+var net = require("net");
+var expect = chai.expect;
+var spawn = require("../lib/spawn.js");
+var phridge = require("../lib/main.js");
+var Phantom = require("../lib/Phantom.js");
+var slow = require("./helpers/slow.js");
 
 chai.config.includeStack = true;
 chai.use(require("chai-as-promised"));
@@ -29,49 +26,41 @@ describe("spawn(config?)", function () {
         return expect(spawn()).to.eventually.be.an.instanceOf(Phantom);
     }));
 
-    it("should pass the provided config to phantomjs", slow(function () {
-        var fakeStdout = createWritableMock();
+    it("should pass the provided config to phantomjs", slow(function (done) {
+        var port;
 
-        return getport(10000)
-            .then(function (port) {
+        // We're setting the webdriver option to test if the config is recognized
+        // Setting this option does not make any sense because phantomjs is
+        // unusable with phantomjs in GhostDriver-mode. But it prints a nice
+        // message to the console which causes the promise to be rejected
+        getport(10000)
+            .then(function (freePort) {
                 var server = net.createServer();
+                var listen = node.lift(server.listen);
+
+                port = freePort;
 
                 // We're blocking the GhostDriver port so phantomjs crashes on startup.
                 // Otherwise the phantomjs processes can't be killed because it doesn't
                 // listen on our commands in GhostDriver-mode.
-                // Using our stdout to determine if phantomjs entered the GhostDriver-mode.
-                server.listen(port);
+                return listen.call(server, freePort);
+            })
+            .then(function () {
+                // Prevent PhantomJS from printing a disturbing error message to the console
+                phridge.config.stdout = null;
+                phridge.config.stderr = null;
 
-                phridge.config.stdout = fakeStdout;
-                phridge.spawn({
+                return expect(phridge.spawn({
                     webdriver: "localhost:" + port
-                });
+                })).to.be.rejectedWith("PhantomJS is launching GhostDriver...");
+            })
+            .then(function () {
                 phridge.config.stdout = process.stdout;
+                phridge.config.stderr = process.stderr;
 
-                return when.promise(function (resolve, reject) {
-                    setTimeout(function () {
-                        if (fakeStdout.message.search("GhostDriver") === -1) {
-                            reject(new Error("GhostDriver config not recognized"));
-                        } else {
-                            resolve();
-                        }
-                    }, 2000);
-                });
+                // Give phantomjs some time to exit
+                setTimeout(done, 100);
             });
-    }));
-
-    it("should share a secret with the phantomjs process so no untrusted code can be executed", slow(function () {
-        var evilCode = "resolve('harharhar')";
-
-        return expect(spawn()
-            .then(function (phantom) {
-                return request({
-                    port: phantom.port,
-                    path: "/",
-                    body: evilCode
-                });
-            }))
-            .to.eventually.have.property("statusCode", 403);
     }));
 
 });
