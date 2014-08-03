@@ -224,16 +224,16 @@ phantom.run(function () {
 
 ### Working in a page context
 
-Most of the time its more useful to work in a specific webpage context. This is done by creating a Page via `phantom.createPage()` which calls internally `require("webpage").create()`. The returned page wrapper will then execute all functions bound to a PhantomJS webpage instance. 
+Most of the time its more useful to work in a specific webpage context. This is done by creating a Page via `phantom.createPage()` which calls internally `require("webpage").create()`. The returned page wrapper will then execute all functions bound to a PhantomJS [webpage instance](http://phantomjs.org/api/webpage/). 
 
 ```javascript
 var page = phantom.createPage();
 
-page.run(function (resolve) {
+page.run(function (resolve, reject) {
     // `this` is now a webpage instance
     this.open("http://example.com", function (status) {
         if (status !== "success") {
-            return reject(new Error("Cannot load " + url));
+            return reject(new Error("Cannot load " + this.url));
         }
         resolve();
     });
