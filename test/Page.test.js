@@ -200,17 +200,25 @@ describe("Page", function () {
             });
 
             it("should preserve all error details like stack traces", function () {
-                return page.run(function brokenFunction() {
-                    undefinedVariable;
-                }).catch(function (err) {
-                    expect(err).to.have.property("message", "Can't find variable: undefinedVariable");
-                    expect(err).to.have.property("line", 2);
-                    expect(err).to.have.property("stack", "ReferenceError: Can't find variable: undefinedVariable\n    at brokenFunction (:2)\n    at :3");
-                    expect(err.stackArray).to.deep.equal([
-                        { "function": "brokenFunction", sourceURL: "", line: 2 },
-                        { sourceURL: "", line: 3 }
-                    ]);
-                });
+                return when.all([
+                    phantom
+                        .run(function brokenFunction() {
+                            undefinedVariable;
+                        }).catch(function (err) {
+                            expect(err).to.have.property("message", "Can't find variable: undefinedVariable");
+                            expect(err).to.have.property("stack");
+                            //console.log(err.stack);
+                        }),
+                    phantom
+                        .run(function (resolve, reject) {
+                            reject(new Error("Custom Error"));
+                        })
+                        .catch(function (err) {
+                            expect(err).to.have.property("message", "Custom Error");
+                            expect(err).to.have.property("stack");
+                            //console.log(err.stack);
+                        })
+                ]);
             });
 
             it("should run the function with the page as context", function () {
