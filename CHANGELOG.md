@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.0.2
+- Fix an error where a promise could have been rejected after it has already been resolved
+
 ### 1.0.1
 - Improved stack traces from PhantomJS
 
