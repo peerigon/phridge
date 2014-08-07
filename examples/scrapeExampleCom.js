@@ -1,6 +1,12 @@
+/**
+ * In this example we're visiting http://example.com with PhantomJS and are trying to parse
+ * the contents of the <h1>-tag
+ */
+
 "use strict";
 
-var phridge = require("../lib/main.js"); // should just be require("phridge") in your code
+// should just be require("phridge") in your code
+var phridge = require("../lib/main.js");
 
 // phridge.spawn() creates a new PhantomJS process
 phridge.spawn()
