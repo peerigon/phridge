@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.0.1
+- Improved stack traces from PhantomJS
+
 ### 1.0.0
 - Replaced inter-process communication from HTTP to regular stdin/stdout
 - `Phantom.prototype.port` has been removed
