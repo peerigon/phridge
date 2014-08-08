@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.0.3
+- Fix an error where new line characters where removed from `console.log()`-messages inside PhantomJS
+
 ### 1.0.2
 - Fix an error where a promise could have been rejected after it has already been resolved
 

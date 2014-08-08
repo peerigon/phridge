@@ -1,6 +1,6 @@
 {
   "name": "phridge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A bridge between node and phantomjs",
   "main": "./lib/main.js",
   "scripts": {
