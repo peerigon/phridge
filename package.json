@@ -22,7 +22,8 @@
     "linerstream": "git://github.com/jhnns/linerstream.git#fix/on-windows",
     "phantomjs": "^1.9.7-15",
     "temp": "^0.8.0",
-    "when": "^3.4.2"
+    "when": "^3.4.2",
+    "map-stream": "^0.1.0"
   },
   "devDependencies": {
     "chai": "^1.9.1",
