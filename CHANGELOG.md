@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.0.4
+- Improve performance when running synchronous functions
+
 ### 1.0.3
 - Fix an error where new line characters where removed from `console.log()`-messages inside PhantomJS
 
