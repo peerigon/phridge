@@ -19,11 +19,11 @@
   ],
   "dependencies": {
     "fork-stream": "^0.0.4",
-    "linerstream": "git://github.com/jhnns/linerstream.git#fix/on-windows",
+    "linerstream": "^0.1.4",
+    "map-stream": "^0.1.0",
     "phantomjs": "^1.9.7-15",
     "temp": "^0.8.0",
-    "when": "^3.4.2",
-    "map-stream": "^0.1.0"
+    "when": "^3.4.2"
   },
   "devDependencies": {
     "chai": "^1.9.1",
