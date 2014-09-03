@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.0.5
+- `phantom.childProcess.cleanStdout` now implements the regular Readable interface
+
 ### 1.0.4
 - Improve performance when running synchronous functions
 
