@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.0.6
+- Fix potential performance issues when PhantomJS' stdin was cluttered with messages
+
 ### 1.0.5
 - `phantom.childProcess.cleanStdout` now implements the regular Readable interface
 
