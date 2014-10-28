@@ -1,6 +1,10 @@
 Changelog
 ---------
 
+### 1.0.7
+- Fix memory leak when disposing pages [#21](https://github.com/peerigon/phridge/pull/21)
+- Fix confusing security warning when PhantomJS exits
+
 ### 1.0.6
 - Fix potential performance issues when PhantomJS' stdin was cluttered with messages
 
