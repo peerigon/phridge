@@ -23,7 +23,7 @@ Instead of ...
 
 ```javascript
 phantom.addCookie("cookie_name", "cookie_value", "localhost", function () {
-    phantom.createPage(function () (page) {
+    phantom.createPage(function (page) {
         page.set("customHeaders.Referer", "http://google.com", function () {
             page.set(
                 "settings.userAgent",
