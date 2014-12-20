@@ -136,7 +136,7 @@ Arguments are stringified by `JSON.stringify()` so be sure to use JSON-valid obj
 
 ### Returning results
 
-The given function can run sync and async. However, the `run()` method itself will always run async as it needs to wait for the http response.
+The given function can run sync and async. However, the `run()` method itself will always run async as it needs to wait for the process to respond.
 
 **Sync**
 
