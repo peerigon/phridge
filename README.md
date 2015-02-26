@@ -347,7 +347,7 @@ Calls `fn` on the context of a PhantomJS page object. See [`phantom.run()`](#pha
 
 ### .dispose(): Promise
 
-Cleans up this page instance by calls `page.close()`
+Cleans up this page instance by calling `page.close()`
 
 <br />
 
