@@ -43,7 +43,7 @@ phantom.addCookie("cookie_name", "cookie_value", "localhost", function () {
 });
 ```
 
-... you can write ..
+... you can write ...
 
 ```javascript
 // node
@@ -82,7 +82,8 @@ Since communication via stdin/stdout is always asynchronous **phridge** returns 
 Installation
 ------------------------------------------------------------------------
 
-[![npm status](https://nodei.co/npm/phridge.png?downloads=true&stars=true)](https://npmjs.org/package/phridge)
+[![npm status](https://nodei.co/npm/phridge.svg?downloads=true&stars=true&downloadRank=true)]
+(https://npmjs.org/package/phridge)
 
 <br />
 
@@ -127,8 +128,8 @@ phantom.run(function () {
 You can also pass arguments to the PhantomJS process:
 
 ```javascript
-phantom.run("1", 2, {}, function (string, number, object) {
-    console.log(string, number, object); // '1', 2, [object Object]
+phantom.run("hi", 2, {}, function (string, number, object) {
+    console.log(string, number, object); // 'hi', 2, [object Object]
 });
 ```
 
@@ -162,7 +163,7 @@ phantom.run(function (resolve) {
 
 ### Returning errors
 
-Errors can be returned by using the `throw` keyword or by calling the `reject`-function. Both ways will reject the promise returned by `run()`.
+Errors can be returned by using the `throw` keyword or by calling the `reject` function. Both ways will reject the promise returned by `run()`.
 
 **Sync**
 
