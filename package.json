@@ -29,7 +29,9 @@
     "chai-as-promised": "^4.1.1",
     "getport": "^0.1.0",
     "istanbul": "^0.3.0",
-    "mocha": "^1.21.3"
+    "mocha": "^1.21.3",
+    "sinon": "^1.14.1",
+    "sinon-chai": "^2.7.0"
   },
   "repository": {
     "type": "git",
