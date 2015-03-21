@@ -3,6 +3,7 @@
 var chai = require("chai");
 var when = require("when");
 var path = require("path");
+var sinon = require("sinon");
 var childProcess = require("child_process");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
@@ -11,11 +12,9 @@ var Page = require("../lib/Page.js");
 var instances = require("../lib/instances.js");
 var slow = require("./helpers/slow.js");
 var testServer = require("./helpers/testServer.js");
+var Writable = require("stream").Writable;
 
-var parentDir = path.resolve(__dirname, "../");
-
-chai.config.includeStack = true;
-chai.use(require("chai-as-promised"));
+require("./helpers/setup.js");
 
 function noop() {}
 
@@ -32,6 +31,20 @@ describe("Phantom", function () {
     var phantom;
     var spawnPhantom;
     var exitPhantom;
+    var stdout;
+    var stderr;
+
+    function mockConfigStreams() {
+        stdout = phridge.config.stdout;
+        stderr = phridge.config.stderr;
+        phridge.config.stdout = new Writable();
+        phridge.config.stderr = new Writable();
+    }
+
+    function unmockConfigStreams() {
+        phridge.config.stdout = stdout;
+        phridge.config.stderr = stderr;
+    }
 
     spawnPhantom = slow(function () {
         if (phantom && phantom.childProcess) {
@@ -354,7 +367,9 @@ describe("Phantom", function () {
 
         describe(".dispose()", function () {
 
+            before(mockConfigStreams);
             beforeEach(spawnPhantom);
+            after(unmockConfigStreams);
 
             it("should terminate the child process with exit-code 0 and then resolve", slow(function () {
                 var exit = false;
@@ -376,6 +391,18 @@ describe("Phantom", function () {
                     phantom = null;
                 });
             }));
+
+            // @see https://github.com/peerigon/phridge/issues/27
+            it("should neither call end() on config.stdout nor config.stderr", function () {
+                phridge.config.stdout.end = sinon.spy();
+                phridge.config.stderr.end = sinon.spy();
+
+                return phantom.dispose().then(function () {
+                    expect(phridge.config.stdout.end).to.not.have.been.called;
+                    expect(phridge.config.stderr.end).to.not.have.been.called;
+                    phantom = null;
+                });
+            });
 
             it("should be save to call .dispose() multiple times", slow(function () {
                 return when.all([
