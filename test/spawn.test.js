@@ -52,7 +52,7 @@ describe("spawn(config?)", function () {
 
                 return expect(phridge.spawn({
                     webdriver: "localhost:" + port
-                })).to.be.rejectedWith("PhantomJS is launching GhostDriver...");
+                })).to.be.rejectedWith(/GhostDriver - main\.fail/);
             })
             .then(function () {
                 phridge.config.stdout = process.stdout;
