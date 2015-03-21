@@ -133,7 +133,7 @@ phantom.run("hi", 2, {}, function (string, number, object) {
 });
 ```
 
-Arguments are stringified by `JSON.stringify()` so be sure to use JSON-valid objects.
+Arguments are stringified by `JSON.stringify()`, so be sure to use JSON-valid objects.
 
 ### Returning results
 
@@ -158,6 +158,16 @@ phantom.run(function (resolve) {
     }, 500);
 }).then(function (msg) {
     console.log(msg); // 'after 500 ms'
+});
+```
+
+Results are also stringified by `JSON.stringify()`, so returning application objects with functions won't work.
+
+```javascript
+phantom.run(function () {
+    ...
+    // doesn't work because page is not a JSON-valid object
+    return page;
 });
 ```
 
