@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.0.8
+- Fix an error where the destination streams were ended prematurely [#27](https://github.com/peerigon/phridge/issues/27)
+
 ### 1.0.7
 - Fix memory leak when disposing pages [#21](https://github.com/peerigon/phridge/pull/21)
 - Fix confusing security warning when PhantomJS exits
