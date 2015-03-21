@@ -2,14 +2,12 @@
 
 var chai = require("chai");
 var when = require("when");
-var chaiAsPromised = require("chai-as-promised");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
 var Phantom = require("../lib/Phantom.js");
 var slow = require("./helpers/slow.js");
 
-chai.config.includeStack = true;
-chai.use(chaiAsPromised);
+require("./helpers/setup.js");
 
 describe("disposeAll()", function () {
 

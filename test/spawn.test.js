@@ -11,8 +11,7 @@ var phridge = require("../lib/main.js");
 var Phantom = require("../lib/Phantom.js");
 var slow = require("./helpers/slow.js");
 
-chai.config.includeStack = true;
-chai.use(require("chai-as-promised"));
+require("./helpers/setup.js");
 
 getport = node.lift(getport);
 

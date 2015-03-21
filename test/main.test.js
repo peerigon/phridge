@@ -7,7 +7,7 @@ var spawn = require("../lib/spawn");
 var disposeAll = require("../lib/disposeAll");
 var phridge = require("../lib/main.js");
 
-chai.config.includeStack = true;
+require("./helpers/setup.js");
 
 describe("phridge", function () {
 
