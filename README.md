@@ -8,16 +8,16 @@ phridge
 
 Working with PhantomJS in node is a bit cumbersome since you need to spawn a new PhantomJS process for every single task. However, spawning a new process is quite expensive and thus can slow down your application significantly.
 
-**phridge** provides an api to easily
+phridge provides an api to easily
 
 - spawn new PhantomJS processes
 - run functions with arguments inside PhantomJS
 - return results from PhantomJS to node
 - manage long-running PhantomJS instances
 
-Unlike other node-PhantomJS bridges **phridge** provides a way to run code directly inside PhantomJS instead of turning every call and assignment into an async operation.
+Unlike other node-PhantomJS bridges phridge provides a way to run code directly inside PhantomJS instead of turning every call and assignment into an async operation.
 
-**phridge** uses PhantomJS' stdin and stdout for [inter-process communication](http://en.wikipedia.org/wiki/Inter-process_communication). It stringifies the given function, passes it to PhantomJS via stdin, executes it in the PhantomJS environment and passes back the results via stdout. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
+phridge uses PhantomJS' stdin and stdout for [inter-process communication](http://en.wikipedia.org/wiki/Inter-process_communication). It stringifies the given function, passes it to PhantomJS via stdin, executes it in the PhantomJS environment and passes back the results via stdout. Thus you can write your PhantomJS scripts inside your node modules in a clean and synchronous way.
 
 Instead of ...
 
@@ -73,9 +73,9 @@ phantom.run("h1", function (selector, resolve) {
 });
 ```
 
-Please note that the `phantom`-object provided by **phridge** is completely different to the `phantom`-object inside PhantomJS. So is the `page`-object. [Check out the api](#api-phantom) for further information.
+Please note that the `phantom`-object provided by phridge is completely different to the `phantom`-object inside PhantomJS. So is the `page`-object. [Check out the api](#api-phantom) for further information.
 
-Since communication via stdin/stdout is always asynchronous **phridge** returns promises most of the time. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favorite promise library should be no problem.
+Since communication via stdin/stdout is always asynchronous phridge returns promises most of the time. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favorite promise library should be no problem.
 
 <br />
 
@@ -97,13 +97,17 @@ The following examples are using [when.js](https://github.com/cujojs/when) but y
 ```javascript
 phridge.spawn({
     proxyAuth: "john:1234",
-    loadImages: false
+    loadImages: false,
+    // passing CLI-style options does also work
+    "--remote-debugger-port": 8888
 }).then(function (phantom) {
     // phantom is now a reference to a specific PhantomJS process
 });
 ```
 
-`phridge.spawn()` takes an object which will be passed as config to PhantomJS. [Check out their documentation](http://phantomjs.org/api/command-line.html) for a detailed overview of options. Use camelCase style for option names of course.
+`phridge.spawn()` takes an object which will be passed as config to PhantomJS. Check out [their documentation](http://phantomjs.org/api/command-line.html) for a detailed overview of options. CLI-style options are added as they are, so be sure to escape the space character.
+
+*Please note: There are [known issues](https://github.com/peerigon/phridge/issues/31) of PhantomJS that some config options are only supported in CLI-style.*
 
 ### Run any function inside PhantomJS
 
@@ -113,7 +117,7 @@ phantom.run(function () {
 });
 ```
 
-**phridge** stringifies the given function, sends it to PhantomJS and evals it again. Hence you can't use scope variables:
+phridge stringifies the given function, sends it to PhantomJS and evals it again. Hence you can't use scope variables:
 
 ```javascript
 var someVar = "hi";
@@ -329,7 +333,7 @@ phridge extends the [ChildProcess](http://nodejs.org/api/child_process.html#chil
 
 ### <a name="phantom-run"></a>.run(args..., fn): Promise → *
 
-Stringifies `fn`, sends it to PhantomJS and executes it there again. `args...` are stringified using `JSON.stringify()` and passed to `fn` again. `fn` may simply `return` a result or `throw` an error or call `resolve()` or `reject()` respectively if it is asynchronous. **phridge** compares `fn.length` with the given number of arguments to determine whether `fn` is sync or async. The returned promise will be resolved with the result or rejected with the error.
+Stringifies `fn`, sends it to PhantomJS and executes it there again. `args...` are stringified using `JSON.stringify()` and passed to `fn` again. `fn` may simply `return` a result or `throw` an error or call `resolve()` or `reject()` respectively if it is asynchronous. phridge compares `fn.length` with the given number of arguments to determine whether `fn` is sync or async. The returned promise will be resolved with the result or rejected with the error.
 
 ### .createPage(): Page
 
