@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.1.0
+- Support CLI-style options [#31](https://github.com/peerigon/phridge/issues/31)
+
 ### 1.0.8
 - Fix an error where the destination streams were ended prematurely [#27](https://github.com/peerigon/phridge/issues/27)
 
