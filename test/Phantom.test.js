@@ -311,6 +311,18 @@ describe("Phantom", function () {
                 });
             });
 
+            it("should reject with an error if phantomjs process is killed", function (done) {
+                phridge.spawn({ someConfig: true }).then(function (ph) {
+                    ph.run(function(resolve, reject) {
+                        resolve(true);
+                    }).catch(function (err) {
+                        expect(err.message).to.equal('Phantomjs process exited');
+                        done();
+                    });
+                    ph.childProcess.kill();
+                });
+            });
+
         });
 
         describe(".createPage()", function () {
