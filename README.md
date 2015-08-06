@@ -260,7 +260,7 @@ And for the busy ones: You can just call `phantom.openPage(url)` which is basica
 ```javascript
 phantom.openPage("http://example.com").then(function (page) {
     console.log("Example loaded");
-};
+});
 ``` 
 
 ### Cleaning up
