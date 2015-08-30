@@ -305,6 +305,34 @@ describe("Phantom", function () {
                 return expect(phantom.run(function () {})).to.be.rejectedWith("Cannot communicate with PhantomJS process due to an unexpected IO error");
             });
 
+            it("should throw an error as soon as PhantomJS process emits an error event", function () {
+                phantom.childProcess.emit("error");
+                return expect(function () {
+                    phantom.run(function () {});
+                }).to.throw("Cannot run function: phantom instance is already disposed");
+            });
+
+            it("should throw an error as soon as the PhantomJS process stdin emits an error event", function () {
+                phantom.childProcess.stdin.emit("error");
+                return expect(function () {
+                    phantom.run(function () {});
+                }).to.throw("Cannot run function: phantom instance is already disposed");
+            });
+
+            it("should throw an error as soon as the PhantomJS process stdout emits an error event", function () {
+                phantom.childProcess.stdout.emit("error");
+                return expect(function () {
+                    phantom.run(function () {});
+                }).to.throw("Cannot run function: phantom instance is already disposed");
+            });
+
+            it("should throw an error as soon as the PhantomJS process stderr emits an error event", function () {
+                phantom.childProcess.stderr.emit("error");
+                return expect(function () {
+                    phantom.run(function () {});
+                }).to.throw("Cannot run function: phantom instance is already disposed");
+            });
+
         });
 
         describe(".createPage()", function () {
