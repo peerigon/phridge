@@ -13,21 +13,12 @@ var instances = require("../lib/instances.js");
 var slow = require("./helpers/slow.js");
 var testServer = require("./helpers/testServer.js");
 var Writable = require("stream").Writable;
+var createChildProcessMock = require("./helpers/createChildProcessMock.js");
 
 require("./helpers/setup.js");
 
-function noop() {}
-
 describe("Phantom", function () {
-    var childProcessMock = {
-        on: noop,
-        phridge: {
-            on: noop
-        },
-        stdin: {
-            write: noop
-        }
-    };
+    var childProcessMock = createChildProcessMock();
     var phantom;
     var spawnPhantom;
     var exitPhantom;
@@ -47,7 +38,7 @@ describe("Phantom", function () {
     }
 
     spawnPhantom = slow(function () {
-        if (phantom && phantom.childProcess) {
+        if (phantom && !phantom.isDisposed) {
             return;
         }
         return phridge.spawn({ someConfig: true })
@@ -59,7 +50,6 @@ describe("Phantom", function () {
         if (!phantom) {
             return;
         }
-
         return phantom.dispose();
     });
 
@@ -69,7 +59,7 @@ describe("Phantom", function () {
 
     describe(".prototype", function () {
 
-        describe(".constructor(childProcess, port, secret)", function () {
+        describe(".constructor(childProcess)", function () {
 
             after(function () {
                 exitPhantom.call(this);
@@ -291,7 +281,6 @@ describe("Phantom", function () {
                         .catch(function (err) {
                             expect(err).to.have.property("message", "Custom Error");
                             expect(err).to.have.property("stack");
-                            //console.log(err.stack);
                         })
                 ]);
             });
@@ -311,16 +300,9 @@ describe("Phantom", function () {
                 });
             });
 
-            it("should reject with an error if phantomjs process is killed", function (done) {
-                phridge.spawn({ someConfig: true }).then(function (ph) {
-                    ph.run(function(resolve, reject) {
-                        resolve(true);
-                    }).catch(function (err) {
-                        expect(err.message).to.equal('Phantomjs process exited');
-                        done();
-                    });
-                    ph.childProcess.kill();
-                });
+            it("should reject with an error if PhantomJS process is killed", function () {
+                phantom.childProcess.kill();
+                return expect(phantom.run(function () {})).to.be.rejectedWith("Cannot communicate with PhantomJS process due to an unexpected IO error");
             });
 
         });
@@ -370,15 +352,15 @@ describe("Phantom", function () {
 
             it("should reject when the page is not available", slow(function () {
                 return expect(
-                    // localhost:1 should fail fast because it doesn't require a DNS lookup
                     phantom.openPage("http://localhost:1")
-                ).to.be.rejectedWith("Cannot load http://localhost:1: Phantomjs returned status fail");
+                ).to.be.rejectedWith("Cannot load http://localhost:1: PhantomJS returned status fail");
             }));
 
         });
 
         describe(".dispose()", function () {
 
+            before(exitPhantom);
             before(mockConfigStreams);
             beforeEach(spawnPhantom);
             after(unmockConfigStreams);
