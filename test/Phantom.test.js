@@ -293,34 +293,6 @@ describe("Phantom", function () {
                 return expect(phantom.run(function () {})).to.be.rejectedWith("Cannot communicate with PhantomJS process due to an unexpected IO error");
             });
 
-            it("should throw an error as soon as PhantomJS process emits an error event", function () {
-                phantom.childProcess.emit("error");
-                return expect(function () {
-                    phantom.run(function () {});
-                }).to.throw("Cannot run function: phantom instance is already disposed");
-            });
-
-            it("should throw an error as soon as the PhantomJS process stdin emits an error event", function () {
-                phantom.childProcess.stdin.emit("error");
-                return expect(function () {
-                    phantom.run(function () {});
-                }).to.throw("Cannot run function: phantom instance is already disposed");
-            });
-
-            it("should throw an error as soon as the PhantomJS process stdout emits an error event", function () {
-                phantom.childProcess.stdout.emit("error");
-                return expect(function () {
-                    phantom.run(function () {});
-                }).to.throw("Cannot run function: phantom instance is already disposed");
-            });
-
-            it("should throw an error as soon as the PhantomJS process stderr emits an error event", function () {
-                phantom.childProcess.stderr.emit("error");
-                return expect(function () {
-                    phantom.run(function () {});
-                }).to.throw("Cannot run function: phantom instance is already disposed");
-            });
-
         });
 
         describe(".createPage()", function () {
@@ -412,13 +384,24 @@ describe("Phantom", function () {
                 });
             });
 
-            it("should be save to call .dispose() multiple times", slow(function () {
+            it("should be safe to call .dispose() multiple times", slow(function () {
                 return when.all([
                     phantom.dispose(),
                     phantom.dispose(),
                     phantom.dispose()
                 ]);
             }));
+
+            it("should be safe to call .dispose() after the process received SIGTERM", slow(function () {
+                phantom.childProcess.kill("SIGTERM");
+                return phantom.dispose();
+            }));
+
+            it("should not be possible to call .run() after .dispose()", function () {
+                expect(phantom.dispose().then(function () {
+                    return phantom.run(function () {});
+                })).to.be.rejectedWith("Cannot run function: phantom instance is already disposed");
+            });
 
         });
 
