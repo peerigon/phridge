@@ -303,63 +303,63 @@ API
 ------------------------------------------------------------------------
 ### phridge
 
-### .spawn(config?): Promise → Phantom
+#### .spawn(config?): Promise → Phantom
 
 Spawns a new PhantomJS process with the given config. [Read the PhantomJS documentation](http://phantomjs.org/api/command-line.html) for all available config options. Use camelCase style for option names. The promise will be fulfilled with an instance of `Phantom`.
 
-### .disposeAll(): Promise
+#### .disposeAll(): Promise
 
 Terminates all PhantomJS processes that have been spawned. The promise will be fulfilled when all child processes emitted an `exit`-event.
 
-### .config.stdout: Stream = process.stdout
+#### .config.stdout: Stream = process.stdout
 
 Destination stream where PhantomJS' [clean stdout](#phantom-childprocess-cleanstdout) will be piped to. Set it `null` if you don't want it. Changing the value does not affect processes that have already been spawned.
 
-### .config.stderr: Stream = process.stderr
+#### .config.stderr: Stream = process.stderr
 
 Destination stream where PhantomJS' stderr will be piped to. Set it `null` if you don't want it. Changing the value does not affect processes that have already been spawned.
 
 ----
 
-### <a name="api-phantom"></a>Phantom (instance)
+### <a name="api-phantom"></a>Phantom.prototype
 
-### .childProcess: ChildProcess
+#### .childProcess: ChildProcess
 
 A reference to the [ChildProcess](http://nodejs.org/api/child_process.html#child_process_class_childprocess)-instance.
 
-### <a name="phantom-childprocess-cleanstdout"></a> .childProcess.cleanStdout: ReadableStream
+#### <a name="phantom-childprocess-cleanstdout"></a> .childProcess.cleanStdout: ReadableStream
 
 phridge extends the [ChildProcess](http://nodejs.org/api/child_process.html#child_process_class_childprocess)-instance by a new stream called `cleanStdout`. This stream is piped to `process.stdout` by default. It provides all data not dedicated to phridge. Streaming data is considered to be dedicated to phridge when the new line is preceded by the classifier string `"message to node: "`.
 
-### <a name="phantom-run"></a>.run(args..., fn): Promise → *
+#### <a name="phantom-run"></a>.run(args..., fn): Promise → *
 
 Stringifies `fn`, sends it to PhantomJS and executes it there again. `args...` are stringified using `JSON.stringify()` and passed to `fn` again. `fn` may simply `return` a result or `throw` an error or call `resolve()` or `reject()` respectively if it is asynchronous. phridge compares `fn.length` with the given number of arguments to determine whether `fn` is sync or async. The returned promise will be resolved with the result or rejected with the error.
 
-### .createPage(): Page
+#### .createPage(): Page
 
 Creates a wrapper to execute code in the context of a specific [PhantomJS webpage](http://phantomjs.org/api/webpage/).
 
-### .openPage(url): Promise → Page
+#### .openPage(url): Promise → Page
 
 Calls `phantom.createPage()`, then `page.open(url, cb)` inside PhantomJS and resolves when `cb` is called. If the returned `status` is not `"success"` the promise will be rejected.
 
-### .dispose(): Promise
+#### .dispose(): Promise
 
 Calls `phantom.exit(0)` inside PhantomJS and resolves when the child process emits an `exit`-event.
 
 ---
 
-### Page (instance)
+### Page.prototype
 
-### .phantom: Phantom
+#### .phantom: Phantom
 
 A reference to the parent [`Phantom`](#api-phantom) instance.
 
-### .run(args..., fn): Promise → *
+#### .run(args..., fn): Promise → *
 
 Calls `fn` on the context of a PhantomJS page object. See [`phantom.run()`](#phantom-run) for further information.
 
-### .dispose(): Promise
+#### .dispose(): Promise
 
 Cleans up this page instance by calling `page.close()`
 
