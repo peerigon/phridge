@@ -40,7 +40,7 @@ describe("Phantom", function () {
     }
 
     spawnPhantom = slow(function () {
-        if (phantom && phantom.childProcess) {
+        if (phantom && phantom._isDisposed === false) {
             return undefined;
         }
         return phridge.spawn({ someConfig: true })
