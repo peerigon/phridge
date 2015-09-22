@@ -12,11 +12,7 @@
     "phantom",
     "phantomjs",
     "bridge",
-    "communication",
-    "process",
-    "subprocess",
-    "long-term",
-    "forever"
+    "driver"
   ],
   "dependencies": {
     "fork-stream": "^0.0.4",
