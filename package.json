@@ -4,7 +4,7 @@
   "description": "A bridge between node and phantomjs",
   "main": "./lib/main.js",
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha -R spec",
+    "test": "mocha -R spec",
     "posttest": "eslint --fix examples lib test",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha"
   },
