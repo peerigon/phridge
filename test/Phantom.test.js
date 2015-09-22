@@ -1,8 +1,10 @@
 "use strict";
 
+/* eslint-env browser */
+/* global config */
+
 var chai = require("chai");
 var when = require("when");
-var path = require("path");
 var sinon = require("sinon");
 var childProcess = require("child_process");
 var expect = chai.expect;
@@ -38,8 +40,8 @@ describe("Phantom", function () {
     }
 
     spawnPhantom = slow(function () {
-        if (phantom && !phantom.isDisposed) {
-            return;
+        if (phantom && phantom.childProcess) {
+            return undefined;
         }
         return phridge.spawn({ someConfig: true })
             .then(function (newPhantom) {
@@ -48,7 +50,7 @@ describe("Phantom", function () {
     });
     exitPhantom = slow(function () {
         if (!phantom) {
-            return;
+            return undefined;
         }
         return phantom.dispose();
     });
@@ -61,7 +63,7 @@ describe("Phantom", function () {
 
         describe(".constructor(childProcess)", function () {
 
-            after(function () {
+            after(/** @this Runner */function () {
                 exitPhantom.call(this);
                 // Null out phantom so spawnPhantom() will spawn a fresh one
                 phantom = null;
@@ -151,7 +153,7 @@ describe("Phantom", function () {
                     var execPath = '"' + process.execPath + '" ';
 
                     childProcess.exec(execPath + require.resolve("./cases/callResolveTwice"), function (error, stdout, stderr) {
-                        expect(error).to.be.null;
+                        expect(error).to.equal(null);
                         expect(stderr).to.contain("Cannot call resolve() after the promise has already been resolved or rejected");
                         done();
                     });
@@ -161,7 +163,7 @@ describe("Phantom", function () {
                     var execPath = '"' + process.execPath + '" ';
 
                     childProcess.exec(execPath + require.resolve("./cases/callRejectTwice"), function (error, stdout, stderr) {
-                        expect(error).to.be.null;
+                        expect(error).to.equal(null);
                         expect(stderr).to.contain("Cannot call reject() after the promise has already been resolved or rejected");
                         done();
                     });
@@ -217,23 +219,9 @@ describe("Phantom", function () {
             });
 
             it("should provide all phantomjs default modules as convenience", function () {
-                return phantom.run(function () {
-                    if (!webpage) {
-                        throw new Error("webpage not available");
-                    }
-                    if (!system) {
-                        throw new Error("system not available");
-                    }
-                    if (!fs) {
-                        throw new Error("fs not available");
-                    }
-                    if (!webserver) {
-                        throw new Error("webserver not available");
-                    }
-                    if (!child_process) {
-                        throw new Error("child_process not available");
-                    }
-                });
+                return expect(phantom.run(function () {
+                    return Boolean(webpage && system && fs && webserver && child_process); // eslint-disable-line
+                })).to.eventually.equal(true);
             });
 
             it("should provide the config object to store all kind of configuration", function () {
@@ -260,7 +248,7 @@ describe("Phantom", function () {
 
             it("should report errors", function () {
                 return expect(phantom.run(function () {
-                    undefinedVariable;
+                    undefinedVariable; // eslint-disable-line
                 })).to.be.rejectedWith("Can't find variable: undefinedVariable");
             });
 
@@ -268,7 +256,7 @@ describe("Phantom", function () {
                 return when.all([
                     phantom
                         .run(function brokenFunction() {
-                            undefinedVariable;
+                            undefinedVariable; // eslint-disable-line
                         }).catch(function (err) {
                             expect(err).to.have.property("message", "Can't find variable: undefinedVariable");
                             expect(err).to.have.property("stack");
@@ -286,13 +274,13 @@ describe("Phantom", function () {
             });
 
             it("should run all functions on the same empty context", function () {
-                return phantom.run(function () {
+                return phantom.run(/** @this Object */function () {
                     if (JSON.stringify(this) !== "{}") {
                         throw new Error("The context is not an empty object");
                     }
                     this.message = "Hi from the first run";
                 }).then(function () {
-                    return phantom.run(function () {
+                    return phantom.run(/** @this Object */function () {
                         if (this.message !== "Hi from the first run") {
                             throw new Error("The context is not persistent");
                         }
@@ -349,22 +337,20 @@ describe("Phantom", function () {
 
             beforeEach(spawnPhantom);
 
-            it("should resolve to an instance of Page", slow(function () {
+            it("should resolve to an instance of Page", slow(/** @this Runner */function () {
                 return expect(phantom.openPage(this.testServerUrl)).to.eventually.be.an.instanceof(Page);
             }));
 
-            it("should resolve when the given page has loaded", slow(function () {
+            it("should resolve when the given page has loaded", slow(/** @this Runner */function () {
                 return phantom.openPage(this.testServerUrl).then(function (page) {
-                    return page.run(function () {
+                    return page.run(/** @this WebPage */function () {
                         var headline;
                         var imgIsLoaded;
 
                         headline = this.evaluate(function () {
-                            /* jshint browser:true */
                             return document.querySelector("h1").innerText;
                         });
                         imgIsLoaded = this.evaluate(function () {
-                            /* jshint browser:true */
                             return document.querySelector("img").width > 0;
                         });
 
@@ -420,8 +406,8 @@ describe("Phantom", function () {
                 phridge.config.stderr.end = sinon.spy();
 
                 return phantom.dispose().then(function () {
-                    expect(phridge.config.stdout.end).to.not.have.been.called;
-                    expect(phridge.config.stderr.end).to.not.have.been.called;
+                    expect(phridge.config.stdout.end).to.have.callCount(0);
+                    expect(phridge.config.stderr.end).to.have.callCount(0);
                     phantom = null;
                 });
             });
