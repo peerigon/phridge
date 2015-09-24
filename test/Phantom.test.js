@@ -61,6 +61,62 @@ describe("Phantom", function () {
 
     describe(".prototype", function () {
 
+        describe("when an unexpected error on the childProcess occurs", function () {
+
+            it("should do nothing when the event loop is emptied within 300ms", function (done) {
+                var testCase = '"' + process.execPath + '" "' + require.resolve("./cases/childProcessError.js") + '" 300';
+
+                childProcess.exec(testCase, function (error, stdout, stderr) {
+                    expect(error).to.equal(null);
+                    expect(stdout).to.contain("Everything alright");
+                    expect(stderr).to.equal("");
+                    done();
+                });
+            });
+
+            it("should emit an error event when the event loop is still active after 350ms", function (done) {
+                var testCase = '"' + process.execPath + '" "' + require.resolve("./cases/childProcessError.js") + '" 350';
+
+                childProcess.exec(testCase, function (error, stdout, stderr) {
+                    expect(error).to.equal(null);
+                    expect(stdout).to.equal("");
+                    expect(stderr).to.contain("Fake error");
+                    expect(stderr).to.contain(require.resolve("./cases/childProcessError.js") + ":26:44");
+                    done();
+                });
+            });
+
+        });
+
+        describe("when the childProcess was killed autonomously", function () {
+
+            beforeEach(spawnPhantom);
+
+            it("should be safe to call .dispose() after the process was killed", slow(function () {
+                // Phantom will eventually emit an error event when the childProcess was killed
+                // In order to prevent node from throwing the error, we need to add a dummy error event listener
+                phantom.on("error", function () {});
+                phantom.childProcess.kill();
+                return phantom.dispose();
+            }));
+
+            it("should emit an error event", slow(function (done) {
+                phantom.on("error", function () {
+                    done();
+                });
+                phantom.childProcess.kill();
+            }));
+
+            it("should not emit an error event when the phantom instance was disposed in the meantime", slow(function (done) {
+                phantom.on("error", function () {
+                    done(); // Will trigger an error that done() has been called twice
+                });
+                phantom.childProcess.kill();
+                phantom.dispose().then(done, done);
+            }));
+
+        });
+
         describe(".constructor(childProcess)", function () {
 
             after(/** @this Runner */function () {
@@ -289,8 +345,14 @@ describe("Phantom", function () {
             });
 
             it("should reject with an error if PhantomJS process is killed", function () {
+                // Phantom will eventually emit an error event when the childProcess was killed
+                // In order to prevent node from throwing the error, we need to add a dummy error event listener
+                phantom.on("error", Function.prototype);
                 phantom.childProcess.kill();
-                return expect(phantom.run(function () {})).to.be.rejectedWith("Cannot communicate with PhantomJS process due to an unexpected IO error");
+                return expect(phantom.run(function () {})).to.be.rejectedWith("Cannot communicate with PhantomJS process due to an unexpected IO error")
+                    .then(function () {
+                        return phantom.dispose();
+                    });
             });
 
         });
@@ -390,11 +452,6 @@ describe("Phantom", function () {
                     phantom.dispose(),
                     phantom.dispose()
                 ]);
-            }));
-
-            it("should be safe to call .dispose() after the process received SIGTERM", slow(function () {
-                phantom.childProcess.kill("SIGTERM");
-                return phantom.dispose();
             }));
 
             it("should not be possible to call .run() after .dispose()", function () {
