@@ -81,7 +81,7 @@ describe("Phantom", function () {
                     expect(error).to.equal(null);
                     expect(stdout).to.equal("");
                     expect(stderr).to.contain("Fake error");
-                    expect(stderr).to.contain(require.resolve("./cases/childProcessError.js") + ":26:44");
+                    expect(stderr).to.contain(require.resolve("./cases/childProcessError.js") + ":25:44");
                     done();
                 });
             });

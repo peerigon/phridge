@@ -13,7 +13,6 @@ phridge.spawn()
         }
 
         phantom.on("error", function (err) {
-            console.error(err);
             console.error(err.stack);
             disposeAndExit();
         });
