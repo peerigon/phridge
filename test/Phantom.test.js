@@ -8,6 +8,7 @@ var when = require("when");
 var sinon = require("sinon");
 var EventEmitter = require("events");
 var childProcess = require("child_process");
+var ps = require("ps-node");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
 var Phantom = require("../lib/Phantom.js");
@@ -462,3 +463,21 @@ describe("Phantom", function () {
     });
 
 });
+
+// This last test checks for the presence of PhantomJS zombies that might have been spawned during tests.
+// We don't want phridge to leave zombies at all circumstances.
+after(slow(function (done) {
+    setTimeout(function () {
+        ps.lookup({
+            command: "phantomjs"
+        }, function onLookUp(err, phantomJsProcesses) {
+            if (err) {
+                throw new Error(err);
+            }
+            if (phantomJsProcesses.length > 0) {
+                throw new Error("PhantomJS zombies detected");
+            }
+            done();
+        });
+    }, 2000);
+}));

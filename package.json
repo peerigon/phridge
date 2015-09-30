@@ -5,7 +5,7 @@
   "main": "./lib/main.js",
   "scripts": {
     "test": "mocha -R spec",
-    "posttest": "eslint --fix examples lib test",
+    "posttest": "eslint examples lib test",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha"
   },
   "keywords": [
@@ -29,6 +29,7 @@
     "getport": "^0.1.0",
     "istanbul": "^0.3.0",
     "mocha": "^2.2.5",
+    "ps-node": "^0.0.5",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.7.0"
   },
