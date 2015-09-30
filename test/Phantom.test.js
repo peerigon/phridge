@@ -6,6 +6,7 @@
 var chai = require("chai");
 var when = require("when");
 var sinon = require("sinon");
+var EventEmitter = require("events");
 var childProcess = require("child_process");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
@@ -61,68 +62,55 @@ describe("Phantom", function () {
 
     describe(".prototype", function () {
 
+        beforeEach(spawnPhantom);
+
+        it("should inherit from EventEmitter", function () {
+            expect(phantom).to.be.instanceOf(EventEmitter);
+        });
+
         describe("when an unexpected error on the childProcess occurs", function () {
 
-            it("should do nothing when the event loop is emptied within 300ms", function (done) {
-                var testCase = '"' + process.execPath + '" "' + require.resolve("./cases/childProcessError.js") + '" 300';
+            it("should emit an 'unexpectedExit'-event", function (done) {
+                var error = new Error("Something bad happened");
 
-                childProcess.exec(testCase, function (error, stdout, stderr) {
-                    expect(error).to.equal(null);
-                    expect(stdout).to.contain("Everything alright");
-                    expect(stderr).to.equal("");
+                phantom.on("unexpectedExit", function (err) {
+                    expect(err).to.equal(error);
                     done();
                 });
-            });
-
-            it("should emit an error event when the event loop is still active after 350ms", function (done) {
-                var testCase = '"' + process.execPath + '" "' + require.resolve("./cases/childProcessError.js") + '" 350';
-
-                childProcess.exec(testCase, function (error, stdout, stderr) {
-                    expect(error).to.equal(null);
-                    expect(stdout).to.equal("");
-                    expect(stderr).to.contain("Fake error");
-                    expect(stderr).to.contain(require.resolve("./cases/childProcessError.js") + ":25:44");
-                    done();
-                });
+                phantom.childProcess.emit("error", error);
             });
 
         });
 
         describe("when the childProcess was killed autonomously", function () {
 
-            beforeEach(spawnPhantom);
-
-            it("should be safe to call .dispose() after the process was killed", slow(function () {
-                // Phantom will eventually emit an error event when the childProcess was killed
-                // In order to prevent node from throwing the error, we need to add a dummy error event listener
-                phantom.on("error", function () {});
+            it("should be safe to call .dispose() after the process was killed", function () {
                 phantom.childProcess.kill();
                 return phantom.dispose();
-            }));
+            });
 
-            it("should emit an error event", slow(function (done) {
-                phantom.on("error", function () {
+            it("should emit an 'unexpectedExit'-event", function (done) {
+                phantom.on("unexpectedExit", function () {
                     done();
                 });
                 phantom.childProcess.kill();
-            }));
+            });
 
-            it("should not emit an error event when the phantom instance was disposed in the meantime", slow(function (done) {
-                phantom.on("error", function () {
+            it("should not emit an 'unexpectedExit'-event when the phantom instance was disposed in the meantime", function (done) {
+                phantom.on("unexpectedExit", function () {
                     done(); // Will trigger an error that done() has been called twice
                 });
                 phantom.childProcess.kill();
                 phantom.dispose().then(done, done);
-            }));
+            });
 
         });
 
         describe(".constructor(childProcess)", function () {
+            var phantom; // It's important to shadow the phantom variable inside this describe block.
+                         // This way spawnPhantom and exitPhantom don't use our mocked Phantom instance.
 
-            after(/** @this Runner */function () {
-                exitPhantom.call(this);
-                // Null out phantom so spawnPhantom() will spawn a fresh one
-                phantom = null;
+            after(function () {
                 // Remove mocked Phantom instances from the instances-array
                 instances.length = 0;
             });
@@ -145,8 +133,6 @@ describe("Phantom", function () {
 
         describe(".childProcess", function () {
 
-            beforeEach(spawnPhantom);
-
             it("should provide a reference on the child process object created by node", function () {
                 expect(phantom.childProcess).to.be.an("object");
                 expect(phantom.childProcess.stdin).to.be.an("object");
@@ -157,8 +143,6 @@ describe("Phantom", function () {
         });
 
         describe(".run(arg1, arg2, arg3, fn)", function () {
-
-            beforeEach(spawnPhantom);
 
             describe("with fn being an asynchronous function", function () {
 
@@ -349,17 +333,20 @@ describe("Phantom", function () {
                 // In order to prevent node from throwing the error, we need to add a dummy error event listener
                 phantom.on("error", Function.prototype);
                 phantom.childProcess.kill();
-                return expect(phantom.run(function () {})).to.be.rejectedWith("Cannot communicate with PhantomJS process due to an unexpected IO error")
+                return phantom.run(function () {})
                     .then(function () {
-                        return phantom.dispose();
+                        throw new Error("There should be an error");
+                    }, function (err) {
+                        expect(err).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain("Cannot communicate with PhantomJS process");
+                        expect(err.originalError).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain(err.originalError.message);
                     });
             });
 
         });
 
         describe(".createPage()", function () {
-
-            beforeEach(spawnPhantom);
 
             it("should return an instance of Page", function () {
                 expect(phantom.createPage()).to.be.an.instanceof(Page);
@@ -368,8 +355,6 @@ describe("Phantom", function () {
         });
 
         describe(".openPage(url)", function () {
-
-            beforeEach(spawnPhantom);
 
             it("should resolve to an instance of Page", slow(/** @this Runner */function () {
                 return expect(phantom.openPage(this.testServerUrl)).to.eventually.be.an.instanceof(Page);
@@ -408,7 +393,6 @@ describe("Phantom", function () {
 
         describe(".dispose()", function () {
 
-            before(exitPhantom);
             before(mockConfigStreams);
             beforeEach(spawnPhantom);
             after(unmockConfigStreams);
@@ -457,7 +441,20 @@ describe("Phantom", function () {
             it("should not be possible to call .run() after .dispose()", function () {
                 expect(phantom.dispose().then(function () {
                     return phantom.run(function () {});
-                })).to.be.rejectedWith("Cannot run function: phantom instance is already disposed");
+                })).to.be.rejectedWith("Cannot run function: Phantom instance is already disposed");
+            });
+
+            it("should not be possible to call .run() after an unexpected exit", function () {
+                phantom.childProcess.emit("error");
+                return phantom.run(function () {})
+                    .then(function () {
+                        throw new Error("There should be an error");
+                    }, function (err) {
+                        expect(err).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain("Cannot run function");
+                        expect(err.originalError).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain(err.originalError.message);
+                    });
             });
 
         });

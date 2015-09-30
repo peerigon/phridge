@@ -1,5 +1,5 @@
 phridge
-========================================================================
+=======
 **A bridge between [node](http://nodejs.org/) and [PhantomJS](http://phantomjs.org/).**
 
 [![Build Status](https://travis-ci.org/peerigon/phridge.svg?branch=master)](https://travis-ci.org/peerigon/phridge)
@@ -300,7 +300,8 @@ will terminate all processes.
 <br />
 
 API
-------------------------------------------------------------------------
+----
+
 ### phridge
 
 #### .spawn(config?): Promise → Phantom
@@ -346,6 +347,14 @@ Calls `phantom.createPage()`, then `page.open(url, cb)` inside PhantomJS and res
 #### .dispose(): Promise
 
 Calls `phantom.exit(0)` inside PhantomJS and resolves when the child process emits an `exit`-event.
+
+### Events
+
+#### unexpectedExit
+
+Will be emitted when PhantomJS exited without a call to `phantom.dispose()` or one of its std streams emitted an `error` event. This event may be fired on some OS when the process group receives a `SIGINT` or `SIGTERM` (see [#35](https://github.com/peerigon/phridge/pull/35)).
+
+When an `unexpectedExit` event is encountered, the `phantom` instance will be unusable and therefore automatically disposed. Usually you don't need to listen for this event.
 
 ---
 
