@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+### 1.2.0
+- `Phantom` now inherits from `EventEmitter`
+- A `phantom` instance now emits an `unexpectedExit`-event when PhantomJS exited without a call to `phantom.dispose()` or one of its std streams emitted an `error` event. See [#35](https://github.com/peerigon/phridge/pull/35) for discussion.
+- Refactored mechanisms to prevent orphaned PhantomJS child processes
+- Handle disposed `phantom` instances more gracefully
+
 ### 1.1.0
 - Support CLI-style options [#31](https://github.com/peerigon/phridge/issues/31)
 
