@@ -24,10 +24,10 @@
   "devDependencies": {
     "chai": "^3.2.0",
     "chai-as-promised": "^5.1.0",
-    "eslint": "^1.5.1",
-    "eslint-config-peerigon": "^0.1.0",
+    "eslint": "^1.6.0",
+    "eslint-config-peerigon": "^0.1.1",
     "getport": "^0.1.0",
-    "istanbul": "^0.3.0",
+    "istanbul": "^0.3.22",
     "mocha": "^2.2.5",
     "ps-node": "^0.0.5",
     "sinon": "^1.14.1",
