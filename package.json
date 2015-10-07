@@ -1,21 +1,18 @@
 {
   "name": "phridge",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A bridge between node and phantomjs",
   "main": "./lib/main.js",
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha -R spec",
+    "test": "mocha -R spec",
+    "posttest": "eslint examples lib test",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha"
   },
   "keywords": [
     "phantom",
     "phantomjs",
     "bridge",
-    "communication",
-    "process",
-    "subprocess",
-    "long-term",
-    "forever"
+    "driver"
   ],
   "dependencies": {
     "fork-stream": "^0.0.4",
@@ -25,11 +22,14 @@
     "when": "^3.4.2"
   },
   "devDependencies": {
-    "chai": "^1.9.1",
-    "chai-as-promised": "^4.1.1",
+    "chai": "^3.2.0",
+    "chai-as-promised": "^5.1.0",
+    "eslint": "^1.6.0",
+    "eslint-config-peerigon": "^0.1.1",
     "getport": "^0.1.0",
-    "istanbul": "^0.3.0",
-    "mocha": "^1.21.3",
+    "istanbul": "^0.3.22",
+    "mocha": "^2.2.5",
+    "ps-node": "^0.0.5",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.7.0"
   },

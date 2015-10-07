@@ -1,7 +1,6 @@
 "use strict";
 
 var chai = require("chai");
-var when = require("when");
 var node = require("when/node");
 var getport = require("getport");
 var net = require("net");

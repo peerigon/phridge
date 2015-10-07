@@ -1,16 +1,20 @@
 "use strict";
 
-var http = require("http"),
-    getport = require("getport"),
-    when = require("when"),
-    fs = require("fs");
+var http = require("http");
+var getport = require("getport");
+var when = require("when");
+var fs = require("fs");
+var path = require("path");
 
-var testPage = fs.readFileSync(__dirname + "/testPage.html", "utf8"),
-    alamidLogo = fs.readFileSync(__dirname + "/alamid.png"),
-    server;
+var testPage = fs.readFileSync(path.join(__dirname, "/testPage.html"), "utf8");
+var alamidLogo = fs.readFileSync(path.join(__dirname, "/alamid.png"), "utf8");
+var server;
 
+/**
+ * @this Runner
+ * @returns {Promise}
+ */
 function start() {
-    /* jshint validthis: true */
     var self = this;
 
     return when.promise(function (resolve, reject) {

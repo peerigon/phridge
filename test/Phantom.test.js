@@ -1,10 +1,14 @@
 "use strict";
 
+/* eslint-env browser */
+/* global config */
+
 var chai = require("chai");
 var when = require("when");
-var path = require("path");
 var sinon = require("sinon");
+var EventEmitter = require("events");
 var childProcess = require("child_process");
+var ps = require("ps-node");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
 var Phantom = require("../lib/Phantom.js");
@@ -13,21 +17,12 @@ var instances = require("../lib/instances.js");
 var slow = require("./helpers/slow.js");
 var testServer = require("./helpers/testServer.js");
 var Writable = require("stream").Writable;
+var createChildProcessMock = require("./helpers/createChildProcessMock.js");
 
 require("./helpers/setup.js");
 
-function noop() {}
-
 describe("Phantom", function () {
-    var childProcessMock = {
-        on: noop,
-        phridge: {
-            on: noop
-        },
-        stdin: {
-            write: noop
-        }
-    };
+    var childProcessMock = createChildProcessMock();
     var phantom;
     var spawnPhantom;
     var exitPhantom;
@@ -47,8 +42,8 @@ describe("Phantom", function () {
     }
 
     spawnPhantom = slow(function () {
-        if (phantom && phantom.childProcess) {
-            return;
+        if (phantom && phantom._isDisposed === false) {
+            return undefined;
         }
         return phridge.spawn({ someConfig: true })
             .then(function (newPhantom) {
@@ -57,9 +52,8 @@ describe("Phantom", function () {
     });
     exitPhantom = slow(function () {
         if (!phantom) {
-            return;
+            return undefined;
         }
-
         return phantom.dispose();
     });
 
@@ -69,12 +63,55 @@ describe("Phantom", function () {
 
     describe(".prototype", function () {
 
-        describe(".constructor(childProcess, port, secret)", function () {
+        beforeEach(spawnPhantom);
+
+        it("should inherit from EventEmitter", function () {
+            expect(phantom).to.be.instanceOf(EventEmitter);
+        });
+
+        describe("when an unexpected error on the childProcess occurs", function () {
+
+            it("should emit an 'unexpectedExit'-event", function (done) {
+                var error = new Error("Something bad happened");
+
+                phantom.on("unexpectedExit", function (err) {
+                    expect(err).to.equal(error);
+                    done();
+                });
+                phantom.childProcess.emit("error", error);
+            });
+
+        });
+
+        describe("when the childProcess was killed autonomously", function () {
+
+            it("should be safe to call .dispose() after the process was killed", function () {
+                phantom.childProcess.kill();
+                return phantom.dispose();
+            });
+
+            it("should emit an 'unexpectedExit'-event", function (done) {
+                phantom.on("unexpectedExit", function () {
+                    done();
+                });
+                phantom.childProcess.kill();
+            });
+
+            it("should not emit an 'unexpectedExit'-event when the phantom instance was disposed in the meantime", function (done) {
+                phantom.on("unexpectedExit", function () {
+                    done(); // Will trigger an error that done() has been called twice
+                });
+                phantom.childProcess.kill();
+                phantom.dispose().then(done, done);
+            });
+
+        });
+
+        describe(".constructor(childProcess)", function () {
+            var phantom; // It's important to shadow the phantom variable inside this describe block.
+                         // This way spawnPhantom and exitPhantom don't use our mocked Phantom instance.
 
             after(function () {
-                exitPhantom.call(this);
-                // Null out phantom so spawnPhantom() will spawn a fresh one
-                phantom = null;
                 // Remove mocked Phantom instances from the instances-array
                 instances.length = 0;
             });
@@ -97,8 +134,6 @@ describe("Phantom", function () {
 
         describe(".childProcess", function () {
 
-            beforeEach(spawnPhantom);
-
             it("should provide a reference on the child process object created by node", function () {
                 expect(phantom.childProcess).to.be.an("object");
                 expect(phantom.childProcess.stdin).to.be.an("object");
@@ -109,8 +144,6 @@ describe("Phantom", function () {
         });
 
         describe(".run(arg1, arg2, arg3, fn)", function () {
-
-            beforeEach(spawnPhantom);
 
             describe("with fn being an asynchronous function", function () {
 
@@ -161,7 +194,7 @@ describe("Phantom", function () {
                     var execPath = '"' + process.execPath + '" ';
 
                     childProcess.exec(execPath + require.resolve("./cases/callResolveTwice"), function (error, stdout, stderr) {
-                        expect(error).to.be.null;
+                        expect(error).to.equal(null);
                         expect(stderr).to.contain("Cannot call resolve() after the promise has already been resolved or rejected");
                         done();
                     });
@@ -171,7 +204,7 @@ describe("Phantom", function () {
                     var execPath = '"' + process.execPath + '" ';
 
                     childProcess.exec(execPath + require.resolve("./cases/callRejectTwice"), function (error, stdout, stderr) {
-                        expect(error).to.be.null;
+                        expect(error).to.equal(null);
                         expect(stderr).to.contain("Cannot call reject() after the promise has already been resolved or rejected");
                         done();
                     });
@@ -227,23 +260,9 @@ describe("Phantom", function () {
             });
 
             it("should provide all phantomjs default modules as convenience", function () {
-                return phantom.run(function () {
-                    if (!webpage) {
-                        throw new Error("webpage not available");
-                    }
-                    if (!system) {
-                        throw new Error("system not available");
-                    }
-                    if (!fs) {
-                        throw new Error("fs not available");
-                    }
-                    if (!webserver) {
-                        throw new Error("webserver not available");
-                    }
-                    if (!child_process) {
-                        throw new Error("child_process not available");
-                    }
-                });
+                return expect(phantom.run(function () {
+                    return Boolean(webpage && system && fs && webserver && child_process); // eslint-disable-line
+                })).to.eventually.equal(true);
             });
 
             it("should provide the config object to store all kind of configuration", function () {
@@ -270,7 +289,7 @@ describe("Phantom", function () {
 
             it("should report errors", function () {
                 return expect(phantom.run(function () {
-                    undefinedVariable;
+                    undefinedVariable; // eslint-disable-line
                 })).to.be.rejectedWith("Can't find variable: undefinedVariable");
             });
 
@@ -278,7 +297,7 @@ describe("Phantom", function () {
                 return when.all([
                     phantom
                         .run(function brokenFunction() {
-                            undefinedVariable;
+                            undefinedVariable; // eslint-disable-line
                         }).catch(function (err) {
                             expect(err).to.have.property("message", "Can't find variable: undefinedVariable");
                             expect(err).to.have.property("stack");
@@ -291,19 +310,18 @@ describe("Phantom", function () {
                         .catch(function (err) {
                             expect(err).to.have.property("message", "Custom Error");
                             expect(err).to.have.property("stack");
-                            //console.log(err.stack);
                         })
                 ]);
             });
 
             it("should run all functions on the same empty context", function () {
-                return phantom.run(function () {
+                return phantom.run(/** @this Object */function () {
                     if (JSON.stringify(this) !== "{}") {
                         throw new Error("The context is not an empty object");
                     }
                     this.message = "Hi from the first run";
                 }).then(function () {
-                    return phantom.run(function () {
+                    return phantom.run(/** @this Object */function () {
                         if (this.message !== "Hi from the first run") {
                             throw new Error("The context is not persistent");
                         }
@@ -311,11 +329,25 @@ describe("Phantom", function () {
                 });
             });
 
+            it("should reject with an error if PhantomJS process is killed", function () {
+                // Phantom will eventually emit an error event when the childProcess was killed
+                // In order to prevent node from throwing the error, we need to add a dummy error event listener
+                phantom.on("error", Function.prototype);
+                phantom.childProcess.kill();
+                return phantom.run(function () {})
+                    .then(function () {
+                        throw new Error("There should be an error");
+                    }, function (err) {
+                        expect(err).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain("Cannot communicate with PhantomJS process");
+                        expect(err.originalError).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain(err.originalError.message);
+                    });
+            });
+
         });
 
         describe(".createPage()", function () {
-
-            beforeEach(spawnPhantom);
 
             it("should return an instance of Page", function () {
                 expect(phantom.createPage()).to.be.an.instanceof(Page);
@@ -325,24 +357,20 @@ describe("Phantom", function () {
 
         describe(".openPage(url)", function () {
 
-            beforeEach(spawnPhantom);
-
-            it("should resolve to an instance of Page", slow(function () {
+            it("should resolve to an instance of Page", slow(/** @this Runner */function () {
                 return expect(phantom.openPage(this.testServerUrl)).to.eventually.be.an.instanceof(Page);
             }));
 
-            it("should resolve when the given page has loaded", slow(function () {
+            it("should resolve when the given page has loaded", slow(/** @this Runner */function () {
                 return phantom.openPage(this.testServerUrl).then(function (page) {
-                    return page.run(function () {
+                    return page.run(/** @this WebPage */function () {
                         var headline;
                         var imgIsLoaded;
 
                         headline = this.evaluate(function () {
-                            /* jshint browser:true */
                             return document.querySelector("h1").innerText;
                         });
                         imgIsLoaded = this.evaluate(function () {
-                            /* jshint browser:true */
                             return document.querySelector("img").width > 0;
                         });
 
@@ -358,9 +386,8 @@ describe("Phantom", function () {
 
             it("should reject when the page is not available", slow(function () {
                 return expect(
-                    // localhost:1 should fail fast because it doesn't require a DNS lookup
                     phantom.openPage("http://localhost:1")
-                ).to.be.rejectedWith("Cannot load http://localhost:1: Phantomjs returned status fail");
+                ).to.be.rejectedWith("Cannot load http://localhost:1: PhantomJS returned status fail");
             }));
 
         });
@@ -398,13 +425,13 @@ describe("Phantom", function () {
                 phridge.config.stderr.end = sinon.spy();
 
                 return phantom.dispose().then(function () {
-                    expect(phridge.config.stdout.end).to.not.have.been.called;
-                    expect(phridge.config.stderr.end).to.not.have.been.called;
+                    expect(phridge.config.stdout.end).to.have.callCount(0);
+                    expect(phridge.config.stderr.end).to.have.callCount(0);
                     phantom = null;
                 });
             });
 
-            it("should be save to call .dispose() multiple times", slow(function () {
+            it("should be safe to call .dispose() multiple times", slow(function () {
                 return when.all([
                     phantom.dispose(),
                     phantom.dispose(),
@@ -412,8 +439,45 @@ describe("Phantom", function () {
                 ]);
             }));
 
+            it("should not be possible to call .run() after .dispose()", function () {
+                expect(phantom.dispose().then(function () {
+                    return phantom.run(function () {});
+                })).to.be.rejectedWith("Cannot run function: Phantom instance is already disposed");
+            });
+
+            it("should not be possible to call .run() after an unexpected exit", function () {
+                phantom.childProcess.emit("error");
+                return phantom.run(function () {})
+                    .then(function () {
+                        throw new Error("There should be an error");
+                    }, function (err) {
+                        expect(err).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain("Cannot run function");
+                        expect(err.originalError).to.be.an.instanceOf(Error);
+                        expect(err.message).to.contain(err.originalError.message);
+                    });
+            });
+
         });
 
     });
 
 });
+
+// This last test checks for the presence of PhantomJS zombies that might have been spawned during tests.
+// We don't want phridge to leave zombies at all circumstances.
+after(slow(function (done) {
+    setTimeout(function () {
+        ps.lookup({
+            command: "phantomjs"
+        }, function onLookUp(err, phantomJsProcesses) {
+            if (err) {
+                throw new Error(err);
+            }
+            if (phantomJsProcesses.length > 0) {
+                throw new Error("PhantomJS zombies detected");
+            }
+            done();
+        });
+    }, 2000);
+}));

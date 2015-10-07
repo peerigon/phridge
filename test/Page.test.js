@@ -1,11 +1,12 @@
 "use strict";
 
+/* global pages, config */
+
 var chai = require("chai");
 var when = require("when");
 var Page = require("../lib/Page.js");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
-var Phantom = require("../lib/Phantom.js");
 var slow = require("./helpers/slow.js");
 
 require("./helpers/setup.js");
@@ -48,7 +49,7 @@ describe("Page", function () {
         describe(".phantom", function () {
 
             it("should be null by default", function () {
-               expect(Page.prototype.phantom).to.equal(null);
+                expect(Page.prototype.phantom).to.equal(null);
             });
 
         });
@@ -153,23 +154,9 @@ describe("Page", function () {
             });
 
             it("should provide all phantomjs default modules as convenience", function () {
-                return page.run(function () {
-                    if (!webpage) {
-                        throw new Error("webpage not available");
-                    }
-                    if (!system) {
-                        throw new Error("system not available");
-                    }
-                    if (!fs) {
-                        throw new Error("fs not available");
-                    }
-                    if (!webserver) {
-                        throw new Error("webserver not available");
-                    }
-                    if (!child_process) {
-                        throw new Error("child_process not available");
-                    }
-                });
+                return expect(page.run(function () {
+                    return Boolean(webpage && system && fs && webserver && child_process); // eslint-disable-line
+                })).to.eventually.equal(true);
             });
 
             it("should provide the config object to store all kind of configuration", function () {
@@ -194,7 +181,7 @@ describe("Page", function () {
 
             it("should report errors", function () {
                 return expect(page.run(function () {
-                    undefinedVariable;
+                    undefinedVariable; // eslint-disable-line
                 })).to.be.rejectedWith("Can't find variable: undefinedVariable");
             });
 
@@ -202,7 +189,7 @@ describe("Page", function () {
                 return when.all([
                     phantom
                         .run(function brokenFunction() {
-                            undefinedVariable;
+                            undefinedVariable; // eslint-disable-line
                         }).catch(function (err) {
                             expect(err).to.have.property("message", "Can't find variable: undefinedVariable");
                             expect(err).to.have.property("stack");
@@ -221,7 +208,7 @@ describe("Page", function () {
             });
 
             it("should run the function with the page as context", function () {
-                return page.run(function () {
+                return page.run(/** @this WebPage */function () {
                     if (!this.clipRect) {
                         throw new Error("The function's context is not the web page");
                     }
@@ -259,3 +246,4 @@ describe("Page", function () {
     });
 
 });
+
