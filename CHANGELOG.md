@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.2.1
+- Fix compatibility issue with node 0.10 [#40](https://github.com/peerigon/phridge/pull/40)
+
 ### 1.2.0
 - `Phantom` now inherits from `EventEmitter`
 - A `phantom` instance now emits an `unexpectedExit`-event when PhantomJS exited without a call to `phantom.dispose()` or one of its std streams emitted an `error` event. See [#35](https://github.com/peerigon/phridge/pull/35) for discussion.
