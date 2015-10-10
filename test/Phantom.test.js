@@ -458,6 +458,17 @@ describe("Phantom", function () {
                     });
             });
 
+            // @see https://github.com/peerigon/phridge/issues/41
+            it("should not schedule a new ping when a pong message is received right after calling dispose()", function () {
+                var message = JSON.stringify({ status: "pong" });
+                var promise = phantom.dispose();
+
+                // Simulate a pong message from PhantomJS
+                phantom._receive(message);
+
+                return promise;
+            });
+
         });
 
     });
