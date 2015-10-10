@@ -1,6 +1,9 @@
 Changelog
 ---------
 
+### 1.2.2
+- Fix cannot read property 'stdin' of null in some cases [#41](https://github.com/peerigon/phridge/issues/41)
+
 ### 1.2.1
 - Fix compatibility issue with node 0.10 [#40](https://github.com/peerigon/phridge/pull/40)
 
