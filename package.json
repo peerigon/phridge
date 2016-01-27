@@ -17,7 +17,7 @@
   "dependencies": {
     "fork-stream": "^0.0.4",
     "linerstream": "^0.1.4",
-    "phantomjs": "^1.9.7-15",
+    "phantomjs": "^2.1.2",
     "temp": "^0.8.0",
     "when": "^3.4.2"
   },
