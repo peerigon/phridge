@@ -78,7 +78,7 @@ describe("spawn(config?)", function () {
                 return expect(phridge.spawn({
                     "--load-images": "true",
                     "--webdriver": "localhost:" + port
-                })).to.be.rejectedWith("PhantomJS is launching GhostDriver...");
+                })).to.be.rejectedWith("GhostDriver");
             })
             .then(function () {
                 phridge.config.stdout = process.stdout;
@@ -86,7 +86,8 @@ describe("spawn(config?)", function () {
 
                 // Give phantomjs some time to exit
                 setTimeout(done, 100);
-            });
+            })
+            .catch(done);
     }));
 
 });
