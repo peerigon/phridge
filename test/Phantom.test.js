@@ -4,7 +4,6 @@
 /* global config */
 
 var chai = require("chai");
-var when = require("when");
 var sinon = require("sinon");
 var EventEmitter = require("events").EventEmitter;
 var childProcess = require("child_process");
@@ -154,7 +153,7 @@ describe("Phantom", function () {
                 });
 
                 it("should provide the possibility to resolve with any stringify-able data", function () {
-                    return when.all([
+                    return Promise.all([
                         expect(phantom.run(function (resolve) {
                             resolve();
                         })).to.eventually.equal(undefined),
@@ -221,7 +220,7 @@ describe("Phantom", function () {
                 });
 
                 it("should provide the possibility to resolve with any stringify-able data", function () {
-                    return when.all([
+                    return Promise.all([
                         expect(phantom.run(function () {
                             // returns undefined
                         })).to.eventually.equal(undefined),
@@ -294,7 +293,7 @@ describe("Phantom", function () {
             });
 
             it("should preserve all error details like stack traces", function () {
-                return when.all([
+                return Promise.all([
                     phantom
                         .run(function brokenFunction() {
                             undefinedVariable; // eslint-disable-line
@@ -432,7 +431,7 @@ describe("Phantom", function () {
             });
 
             it("should be safe to call .dispose() multiple times", slow(function () {
-                return when.all([
+                return Promise.all([
                     phantom.dispose(),
                     phantom.dispose(),
                     phantom.dispose()

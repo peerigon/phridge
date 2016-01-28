@@ -1,7 +1,6 @@
 "use strict";
 
 var chai = require("chai");
-var when = require("when");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
 var slow = require("./helpers/slow.js");
@@ -13,7 +12,7 @@ describe("disposeAll()", function () {
     it("should exit cleanly all running phantomjs instances", slow(function () {
         var exited = [];
 
-        return when.all([
+        return Promise.all([
             phridge.spawn(),
             phridge.spawn(),
             phridge.spawn()

@@ -54,14 +54,10 @@ phridge.spawn()
 
     })
 
+    .catch(function (err) {
+        console.error(err.stack);
+    })
+
     // phridge.disposeAll() exits cleanly all previously created child processes.
     // This should be called in any case to clean up everything.
-    .finally(phridge.disposeAll)
-
-    .done(function () {
-        // everything is alright
-    }, function (err) {
-        // Don't forget to handle errors
-        // In this case we're just throwing it
-        throw err;
-    });
+    .then(phridge.disposeAll);

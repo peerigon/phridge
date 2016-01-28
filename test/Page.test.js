@@ -3,7 +3,6 @@
 /* global pages, config */
 
 var chai = require("chai");
-var when = require("when");
 var Page = require("../lib/Page.js");
 var expect = chai.expect;
 var phridge = require("../lib/main.js");
@@ -68,7 +67,7 @@ describe("Page", function () {
                 });
 
                 it("should provide the possibility to resolve with any stringify-able data", function () {
-                    return when.all([
+                    return Promise.all([
                         expect(page.run(function (resolve) {
                             resolve();
                         })).to.eventually.equal(undefined),
@@ -115,7 +114,7 @@ describe("Page", function () {
                 });
 
                 it("should provide the possibility to resolve with any stringify-able data", function () {
-                    return when.all([
+                    return Promise.all([
                         expect(page.run(function () {
                             // returns undefined
                         })).to.eventually.equal(undefined),
@@ -186,7 +185,7 @@ describe("Page", function () {
             });
 
             it("should preserve all error details like stack traces", function () {
-                return when.all([
+                return Promise.all([
                     phantom
                         .run(function brokenFunction() {
                             undefinedVariable; // eslint-disable-line

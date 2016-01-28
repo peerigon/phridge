@@ -2,7 +2,6 @@
 
 var http = require("http");
 var getport = require("getport");
-var when = require("when");
 var fs = require("fs");
 var path = require("path");
 
@@ -17,7 +16,7 @@ var server;
 function start() {
     var self = this;
 
-    return when.promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
         getport(30000, function (err, port) {
             if (err) {
                 return reject(err);

@@ -1,7 +1,6 @@
 "use strict";
 
 var chai = require("chai");
-var node = require("when/node");
 var getport = require("getport");
 var net = require("net");
 var expect = chai.expect;
@@ -9,10 +8,11 @@ var spawn = require("../lib/spawn.js");
 var phridge = require("../lib/main.js");
 var Phantom = require("../lib/Phantom.js");
 var slow = require("./helpers/slow.js");
+var lift = require("../lib/lift.js");
 
 require("./helpers/setup.js");
 
-getport = node.lift(getport);
+getport = lift(getport);
 
 describe("spawn(config?)", function () {
     var port;
@@ -21,7 +21,7 @@ describe("spawn(config?)", function () {
         return getport(10000)
             .then(function (freePort) {
                 var server = net.createServer();
-                var listen = node.lift(server.listen);
+                var listen = lift(server.listen);
 
                 port = freePort;
 
