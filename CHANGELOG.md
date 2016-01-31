@@ -1,6 +1,10 @@
 Changelog
 ---------
 
+### 2.0.0
+- **Breaking:** Update `phantomjs-prebuilt@^2.1.3`
+- **Breaking:** Replace [when.js](https://github.com/cujojs/when) promises with native `Promise`
+
 ### 1.2.2
 - Fix cannot read property 'stdin' of null in some cases [#41](https://github.com/peerigon/phridge/issues/41)
 
