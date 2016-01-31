@@ -82,8 +82,7 @@ Please note that the `phantom`-object provided by phridge is completely differen
 Installation
 ------------------------------------------------------------------------
 
-[![npm status](https://nodei.co/npm/phridge.svg?downloads=true&stars=true&downloadRank=true)]
-(https://npmjs.org/package/phridge)
+`npm install phridge`
 
 <br />
 
