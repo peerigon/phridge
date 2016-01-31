@@ -2,9 +2,11 @@ phridge
 =======
 **A bridge between [node](http://nodejs.org/) and [PhantomJS](http://phantomjs.org/).**
 
-[![Build Status](https://travis-ci.org/peerigon/phridge.svg?branch=master)](https://travis-ci.org/peerigon/phridge)
+[![](https://img.shields.io/npm/v/phridge.svg)](https://www.npmjs.com/package/phridge)
+[![](https://img.shields.io/npm/dm/phridge.svg)](https://www.npmjs.com/package/phridge)
 [![Dependency Status](https://david-dm.org/peerigon/phridge.svg)](https://david-dm.org/peerigon/phridge)
-[![Coverage Status](https://img.shields.io/coveralls/peerigon/phridge.svg)](https://coveralls.io/r/peerigon/phridge?branch=master)
+[![Build Status](https://travis-ci.org/peerigon/phridge.svg?branch=master)](https://travis-ci.org/peerigon/phridge)
+[![Coverage Status](https://img.shields.io/coveralls/peerigon/phridge.svg)](https://Coveralls.io/r/peerigon/phridge?branch=master)
 
 Working with PhantomJS in node is a bit cumbersome since you need to spawn a new PhantomJS process for every single task. However, spawning a new process is quite expensive and thus can slow down your application significantly.
 
@@ -69,13 +71,11 @@ phantom.run("h1", function (selector, resolve) {
     });
 }).then(function (text) {
     // inside node again
-    console.log("The element contains the following text: "+ text);
+    console.log("The element contains the following text: " + text);
 });
 ```
 
 Please note that the `phantom`-object provided by phridge is completely different to the `phantom`-object inside PhantomJS. So is the `page`-object. [Check out the api](#api-phantom) for further information.
-
-Since communication via stdin/stdout is always asynchronous phridge returns promises most of the time. It uses [when.js](https://github.com/cujojs/when) which is Promises/A+ compliant, so using your favorite promise library should be no problem.
 
 <br />
 
@@ -89,8 +89,6 @@ Installation
 
 Examples
 ------------------------------------------------------------------------
-
-The following examples are using [when.js](https://github.com/cujojs/when) but you should be free to use any Promises/A+ compliant library.
 
 ### Spawn a new PhantomJS process
 
